@@ -90,7 +90,7 @@ def main() -> None:
                     node["order"] = 5
         for node in workflow["nodes"]:
             if node["type"].startswith("AuK"):
-                node["properties"].update({"cnr_id": "auk-t8", "ver": "2.0.7"})
+                node["properties"].update({"cnr_id": "auk-t8", "ver": "2.0.8"})
         path = WORKFLOW_DIR / f"AuK-{number}-{label}.json"
         path.write_text(json.dumps(workflow, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 

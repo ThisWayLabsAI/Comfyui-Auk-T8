@@ -263,6 +263,26 @@ def test_tts_auto_duration_matches_verified_short_phrase(plugin):
     assert metadata["duration_strategy"] == "auto_text"
 
 
+@pytest.mark.parametrize("text", ["不是！", "感谢！", "谢谢"])
+def test_zero_shot_auto_duration_does_not_stretch_ultra_short_cjk_text(plugin, text):
+    engine = FakeEngine()
+    result = plugin.nodes.AuKGenerateEdit.execute(
+        engine,
+        "参考声音克隆",
+        text,
+        "",
+        12.4,
+        42,
+        input_audio={"waveform": torch.ones(1, 1, 3 * 24_000), "sample_rate": 24_000},
+        duration_mode=plugin.duration.AUTO_TASK_DURATION_MODE,
+    )
+    metadata = json.loads(result.result[2])
+    assert engine.call[2] == 1.0
+    assert metadata["generation_seconds"] == 1.0
+    assert metadata["requested_generation_seconds"] == 12.4
+    assert plugin.duration.estimate_tts_seconds(text) > metadata["generation_seconds"]
+
+
 def test_seed_widget_randomizes_after_generation_by_default(plugin):
     schema = plugin.nodes.AuKGenerateEdit.define_schema()
     seed = next(value for value in schema.inputs if value.id == "seed")

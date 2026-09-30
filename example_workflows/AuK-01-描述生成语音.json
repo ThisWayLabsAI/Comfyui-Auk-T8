@@ -30,7 +30,7 @@
       "properties": {
         "Node name for S&R": "AuKModelLoader",
         "cnr_id": "auk-t8",
-        "ver": "2.0.7"
+        "ver": "2.0.8"
       },
       "widgets_values": [
         "AuK Base",
@@ -97,7 +97,7 @@
       "properties": {
         "Node name for S&R": "AuKGenerateEdit",
         "cnr_id": "auk-t8",
-        "ver": "2.0.7"
+        "ver": "2.0.8"
       },
       "widgets_values": [
         "描述生成语音",

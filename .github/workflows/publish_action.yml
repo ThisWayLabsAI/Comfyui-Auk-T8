@@ -73,7 +73,7 @@ jobs:
             --url "${api}/publishers/${publisher}/nodes/${node}/versions/${current_id}" \
             --header "${auth}" \
             --header "Content-Type: application/json" \
-            --data '{"changelog":"Applies independent 30-second limits to input and output, uses exact unpadded Silero speech duration and official LUFS handling, ignores stale duration widgets, validates task requests, and displays the matching official guide.","deprecated":false}'
+            --data '{"changelog":"Fixes automatic duration for ultra-short zero-shot voice-cloning text, preventing padded pauses while retaining the existing instruction-TTS and longer-text rules.","deprecated":false}'
 
           current_status="$(curl --silent --show-error --fail \
             "${api}/nodes/${node}/versions?cacheBust=$(date +%s%N)" | \

@@ -34,6 +34,8 @@ def main() -> int:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--task", default="情绪编辑")
     parser.add_argument("--primary", default="恐惧")
+    parser.add_argument("--secondary", default="")
+    parser.add_argument("--duration-mode", default="自动适配（按任务规则）")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--metadata", type=Path, required=True)
     args = parser.parse_args()
@@ -56,14 +58,14 @@ def main() -> int:
         engine=engine,
         task=args.task,
         primary=args.primary,
-        secondary="",
+        secondary=args.secondary,
         generation_seconds=29.9,
         seed=20260916,
         input_audio={"waveform": waveform.unsqueeze(0), "sample_rate": sample_rate},
         nfe_steps=32,
         cfg_strength=2.0,
         sway_sampling_coef=-1.0,
-        duration_mode=nodes.AUTO_DURATION_MODE,
+        duration_mode=args.duration_mode,
     ).result
     output_audio, instruction, metadata_text, _ = result
     output = output_audio["waveform"].squeeze(0)

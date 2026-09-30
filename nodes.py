@@ -21,6 +21,7 @@ from .duration import (
     MANUAL_DURATION_MODE,
     TTS_TASK_KEYS,
     estimate_tts_seconds,
+    estimate_zero_shot_tts_seconds,
 )
 from .runtime import (
     MAX_SEQUENCE_SECONDS,
@@ -234,6 +235,8 @@ def resolve_generation_seconds(
         target_frames = math.ceil(target * engine.target_sample_rate / engine.downsample_rate)
         return latent_frames_to_seconds(engine, target_frames)
     if task_key in TTS_TASK_KEYS and duration_mode in {AUTO_DURATION_MODE, AUTO_TASK_DURATION_MODE}:
+        if task_key == "zero_shot_tts":
+            return estimate_zero_shot_tts_seconds(primary, max_seconds=MAX_SEQUENCE_SECONDS)
         return estimate_tts_seconds(primary, max_seconds=MAX_SEQUENCE_SECONDS)
     return float(requested_seconds)
 

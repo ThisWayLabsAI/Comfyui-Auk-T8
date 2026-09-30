@@ -24,7 +24,7 @@ Tasks include instruction TTS, zero-shot voice cloning, speech and lyric editing
 
 ### ComfyUI Manager
 
-Search for **AuK · T8star-Aix** in ComfyUI Manager, install it, and restart ComfyUI. Confirm that Manager offers version 2.0.7 or later; if Registry processing still shows an older release, use the Git installation until the new version becomes active.
+Search for **AuK · T8star-Aix** in ComfyUI Manager, install it, and restart ComfyUI. Confirm that Manager offers version 2.0.8 or later; if Registry processing still shows an older release, use the Git installation until the new version becomes active.
 
 ### Git
 
@@ -87,6 +87,8 @@ Before inference, the node uses official Silero VAD to measure the unpadded spee
 Source/reference audio and generated output are each limited to 30 seconds independently. They are not added together, so a 30-second input may produce a 30-second output. Slowing speech or changing emotion may resolve to more than 30 seconds; trim the source first in that case. VAD removes some leading/trailing silence in speech tasks. Metadata separately records the cropped raw input, prepared input, and resolved output duration. CPU mode is available for compatibility testing but is very slow; NVIDIA CUDA with bf16 is recommended.
 
 > Version 2.0.7 adds a clickable automatic-duration button and a standalone audio-trim node, connected in every audio workflow. Input validation uses exact sample counts for the 30-second limit, rejects invalid sampling parameters, and exposes the resolved target duration. Restart ComfyUI and reload the browser after upgrading. Add the crop node to an old graph or import a new workflow.
+
+> Version 2.0.8 fixes automatic duration for ultra-short zero-shot voice-cloning targets. Two-character Chinese lines such as `不是！` now resolve to 1.0 second instead of applying the F5 short-text slowdown and creating a long padded slot. Longer clone targets and instruction TTS keep their existing duration rules.
 
 > Version 2.0.6 fixes validation against stale pre-trim durations and applies independent 30-second limits to input and output. It completes the official duration and preprocessing rules, adds quality repair, and defaults to AuK Base. The package includes drag-and-drop workflows for all 17 task entries.
 

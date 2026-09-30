@@ -2,7 +2,7 @@ import { app } from "../../../scripts/app.js";
 
 let guides = {};
 const guideUrl = new URL("../task_guides.json", import.meta.url);
-guideUrl.searchParams.set("v", "2.0.7");
+guideUrl.searchParams.set("v", "2.0.8");
 fetch(guideUrl, { cache: "no-store" })
     .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
