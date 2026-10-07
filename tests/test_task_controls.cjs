@@ -13,7 +13,8 @@ const source = fs.readFileSync(path.join(root, "web/js/auk_task_controls.js"), "
 
 function element() {
     return {
-        style: {}, children: [], textContent: "",
+        style: {}, children: [], textContent: "", attributes: {},
+        setAttribute(name, value) { this.attributes[name] = value; },
         replaceChildren() { this.children = []; this.textContent = ""; },
         append(...nodes) { this.children.push(...nodes); },
         prepend(node) { this.children.unshift(node); },
@@ -44,6 +45,8 @@ async function setup(loadImmediately) {
                 { name: "task", value: "描述生成语音", options: { values: [...Object.keys(guides), ...Object.keys(aliases.task)] } },
                 { name: "duration_mode", value: "手动指定", options: { values: [...Object.values(aliases.duration_mode), ...Object.keys(aliases.duration_mode)] } },
                 { name: "generation_seconds", value: 99 },
+                { name: "primary", value: "Keep my primary text", inputEl: element() },
+                { name: "secondary", value: "Keep my secondary text", inputEl: element() },
             ];
         }
         addDOMWidget(name, type, container) { this.container = container; return {}; }
@@ -64,14 +67,31 @@ for (const immediate of [true, false]) {
         assert.equal(node.widgets[0].options.values.length, 17);
         assert.ok(node.widgets[0].options.values.every((value) => !Object.hasOwn(aliases.task, value)));
         assert.equal(node.widgets[1].options.values.length, 3);
-        assert.equal(node.container.children[1].textContent, "Official usage · Instruction TTS");
+        assert.equal(node.container.children[1].textContent, "Usage & tuning · Instruction TTS");
         // Loading a graph reapplies serialized values after node creation.
         for (const [legacy, english] of Object.entries(aliases.task)) {
             node.widgets[0].value = legacy;
             extension.loadedGraphNode(node);
             assert.equal(node.widgets[0].value, english);
-            assert.equal(node.container.children[1].textContent, `Official usage · ${english}`);
+            assert.equal(node.container.children[1].textContent, `Usage & tuning · ${english}`);
+            for (const [name, number] of [["primary", 1], ["secondary", 2]]) {
+                const widget = node.widgets.find((entry) => entry.name === name);
+                const guide = guides[english];
+                assert.equal(widget.label, `${number}. ${guide[`${name}_label`]}`);
+                assert.equal(widget.options.tooltip, guide[`${name}_help`]);
+                assert.equal(widget.inputEl.placeholder, guide[`${name}_help`]);
+                assert.equal(widget.inputEl.title, guide[`${name}_help`]);
+                assert.equal(widget.inputEl.attributes["aria-label"], widget.label);
+                assert.equal(widget.value, `Keep my ${name} text`);
+                assert.equal(node.container.children[number + 2].textContent,
+                    `${number}. ${guide[`${name}_label`]}: ${guide[`${name}_help`]}`);
+            }
         }
+        // Direct task selection refreshes guidance without changing user text.
+        node.widgets[0].value = "Speech text editing";
+        node.widgets[0].callback(node.widgets[0].value);
+        assert.equal(node.widgets[3].label, `1. ${guides["Speech text editing"].primary_label}`);
+        assert.equal(node.widgets[4].value, "Keep my secondary text");
         node.container.children[0].onclick({ stopPropagation() {} });
         assert.equal(node.widgets[1].value, "Automatic adaptation (task rules)");
         assert.equal(node.widgets[2].value, 3);

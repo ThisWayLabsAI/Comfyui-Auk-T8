@@ -77,7 +77,7 @@ Flash plus Qwen requires about 18.7 GB. Both AuK variants plus Qwen require abou
 
 1. Drag the JSON for the required task from `example_workflows` into ComfyUI. The folder contains an executable workflow for every one of the 17 entries, starting with `AuK-01-Instruction-TTS.json`. Connect your own `auk_input.wav` for source/reference tasks. For speech/lyric edits and target-speaker extraction, replace the sample words with the exact words in your audio.
 2. **AuK Model Loader** defaults to AuK Base. Prefer Base for emotion, accent, timbre, nonverbal, whisper, and repair tasks; Flash is intended for fast previews.
-3. Select a task in **AuK Generate / Edit**. The node displays its official input requirement, field meanings, example, and warning. For source/reference tasks, connect `Load Audio → AuK Audio Trim / Duration → AuK Generate / Edit`. Trim long originals before generation. Set both crop values to `0` to pass the full source.
+3. Select a task in **AuK Generate / Edit**. The node displays task requirements, numbered text-box explanations, examples, and practical tuning tips. Labels and placeholders change with the task. For source/reference tasks, connect `Load Audio → AuK Audio Trim / Duration → AuK Generate / Edit`. Trim long originals before generation. Set both crop values to `0` to pass the full source.
 4. Queue the workflow. AuK-Flash always uses NFE=4 and CFG=0; Base uses the advanced sampling controls.
 
 **Automatic duration adaptation:** click **↻ Adapt duration automatically** in the node guide, or select **Automatic adaptation (task rules)** in the visible duration mode widget (the default). Editing uses the actual cropped input and task rules, ignoring a stale target value or a connected Float. No separate Float node is needed. Instruction TTS and voice cloning estimate duration from text. This estimates the spoken length from the target text and prevents a short sentence from continuing into AuK's internal no-reference marker when a much longer duration is requested. Select **Manual duration** for exact TTS timing; editing rules remain automatic. The previous automatic TTS option is kept for existing workflows. Text estimates over 30 seconds now report an error requesting shorter text or separate segments instead of silently truncating. The Seed widget uses ComfyUI's standard **randomize after generation** mode by default; switch its control mode to fixed to reproduce a result. The metadata output records the actual seed, requested duration, resolved duration, and duration mode.
@@ -95,6 +95,35 @@ Source/reference audio and generated output are each limited to 30 seconds indep
 > Version 2.0.6 fixes validation against stale pre-trim durations and applies independent 30-second limits to input and output. It completes the official duration and preprocessing rules, adds quality repair, and defaults to AuK Base. The package includes drag-and-drop workflows for all 17 task entries.
 
 > Version 2.0.6 uses official unpadded Silero speech duration and LUFS handling, validates nonverbal/quality/speaker-order requests before inference, and displays the matching official guide inside the node.
+
+## Text boxes and better speech edits
+
+See the [task input and tuning guide](docs/TASK_GUIDE.md) for all 17 tasks. The second text box is **not a general additional-instructions prompt**. For speech/lyric edits it accepts an optional transcript of the cropped source, used only for duration estimation. Most tasks ignore it; instruction TTS uses it for voice description, and speaker extraction uses it for supported cleanup keywords.
+
+For speech text editing, start with **AuK Base**, crop to the sentence with a little surrounding context, and enter one precise request in box 1, for example `Replace 'Los Angeles' with 'Florida'.` Use the exact words spoken in your crop. Box 2 can contain the full original transcript of that crop, before replacement. Try a few seeds, then fix the seed before comparing settings. Base defaults are NFE `32`, CFG `2`, sway `-1`; experiment with one control at a time. Flash always uses NFE `4`, CFG `0`, sway `-1`, regardless of the displayed values. These are inference adjustments, not training or weight fine-tuning.
+
+Restart ComfyUI and refresh the browser after updating to load new backend tooltips and frontend guides. Older workflows retain their text and graph connections; task changes update help without clearing text, so review both boxes when switching tasks.
+
+## Troubleshooting installation
+
+### Missing model configuration
+
+Checkpoint weights alone are not enough. Both `AuK/` and `AuK-Flash/` need their own `config.yaml`; the Qwen folder needs its tokenizer, processor, configuration, and all three weight shards. Use the downloader above, or obtain the matching configs from the pinned snapshot: [Base config](https://huggingface.co/t8star/Auk-Comfy/resolve/326a675046f653f4df2eed89ac3195b028db1749/AuK/config.yaml), [Flash config](https://huggingface.co/t8star/Auk-Comfy/resolve/326a675046f653f4df2eed89ac3195b028db1749/AuK-Flash/config.yaml). Save each in the corresponding model directory, not the custom-node directory.
+
+### `ModuleNotFoundError: No module named 'qwen_omni_utils'`
+
+Qwen audio processing needs this dependency even when the models load successfully. Install it into **ComfyUI's Python**, not an unrelated system Python. For this Windows embedded layout (adjust the path for your installation):
+
+```powershell
+& "C:\ComfyUI-Easy-Install\python_embeded\python.exe" -m pip install "qwen-omni-utils==0.0.9"
+& "C:\ComfyUI-Easy-Install\python_embeded\python.exe" -c "from qwen_omni_utils import process_mm_info; print('Qwen audio utilities OK')"
+```
+
+Restart ComfyUI after installation. The reported installation was repaired with `--no-deps` **only after verifying the package's dependencies were already installed**; do not use that flag on an incomplete environment. On an existing shared ComfyUI installation, review dependency changes before reinstalling the full requirements: this package's Transformers pin can change an already installed version. Installing the missing package does not require replacing PyTorch or installing FlashAttention.
+
+### `flash_attn.bert_padding` import error with SeedVR2
+
+Some SeedVR2 installations register an incomplete `flash_attn` placeholder. Earlier AuK code mistook it for a working FlashAttention installation. This fork guards optional imports and continues with its PyTorch attention backend. Update this fork and restart ComfyUI; installing FlashAttention is not required for the default AuK inference path. **AuK-Flash**, the model variant, is separate from **FlashAttention**, the optional attention library.
 
 ## Standalone local package
 

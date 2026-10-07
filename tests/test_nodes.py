@@ -56,6 +56,9 @@ def test_web_task_guide_covers_every_visible_task(plugin):
         assert entry["requirement"] == guide.requirement
         assert entry["example"] == guide.example
         assert entry["note"] == guide.note
+        assert entry["primary_help"] == guide.primary_help
+        assert entry["secondary_help"] == guide.secondary_help
+        assert guide.primary_help and guide.secondary_help
     script = (root / "web" / "js" / "auk_task_controls.js").read_text(encoding="utf-8")
     assert "loadedGraphNode" in script
     assert "serialize: false" in script

@@ -130,6 +130,14 @@ All paths below are relative to `example_workflows/`. The generator and English 
 
 - October 7, 2026: `AuKModelLoader` reached model import after the missing variant `config.yaml` files were supplied. SeedVR2's compatibility module registers a `flash_attn` placeholder when FlashAttention is unavailable. AuK's package-presence check accepted that placeholder, then failed importing `flash_attn.bert_padding`, despite inference selecting the PyTorch backend. The optional import now tolerates incomplete/unloadable FlashAttention and rejects an explicit FlashAttention selection with a clear error. A subprocess regression test reproduces the placeholder, checks PyTorch attention execution, and imports the actual inference entrypoint without loading weights. Recheck this guard during upstream syncs.
 
+### Task guidance and dependency follow-up
+
+After model loading was repaired, inference reported a missing `qwen_omni_utils`. Installing `qwen-omni-utils==0.0.9` into ComfyUI's embedded Python resolved that error; dependencies were checked first, allowing a targeted `--no-deps` install without replacing shared packages. The user subsequently confirmed generation worked. This is a user-reported runtime check, not an automated audio-quality benchmark. README troubleshooting records the missing configurations, dependency repair, and SeedVR2 placeholder issue for shared installations.
+
+Per-task guidance now explains both numbered text boxes and inference tuning. `primary_help` and `secondary_help` are maintained in backend `TASK_GUIDES` and exported by the workflow generator. The frontend updates labels, placeholders, accessibility descriptions, and tooltips without changing widget IDs or text values. Most secondary inputs are unused; speech/lyric editing uses them only for duration estimation, not extra model directions. Base/Flash controls and task limits are documented in `docs/TASK_GUIDE.md`. Example node sizes were enlarged to accommodate the guide; graph wiring and inference semantics are unchanged. Recheck task documentation and generated guidance when upstream adds tasks or changes field behavior.
+
+Validation for this follow-up: 166 Python tests and 2 frontend Node tests passed, including generated-guide coverage and regeneration idempotence. An isolated live ComfyUI browser session confirmed task-specific placeholders, guide rendering, and label changes between speech editing and pitch editing without clearing entered text. The browser skill's visual check prompted separating the duration button from the guide heading. No audio inference was queued for this documentation/UI update; the user-reported successful generation above followed the dependency repair.
+
 ### Sync record
 
 After each sync, record the integrated upstream commit, translation updates, checks performed, and unresolved limitations here. No subsequent upstream release has been merged yet.

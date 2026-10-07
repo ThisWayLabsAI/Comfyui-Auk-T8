@@ -70,7 +70,7 @@ def main() -> None:
             -1.0,
             duration_data["AUTO_TASK_DURATION_MODE"],
         ]
-        generator["size"] = [520, 640]
+        generator["size"] = [560, 760]
         if not any(output.get("type") == "FLOAT" for output in generator["outputs"]):
             generator["outputs"].append({
                 "name": "Resolved target duration (seconds)", "type": "FLOAT", "links": None, "slot_index": 3,
@@ -122,6 +122,8 @@ def main() -> None:
             "key": task.key,
             "primary_label": task.primary_label,
             "secondary_label": task.secondary_label,
+            "primary_help": guide.primary_help,
+            "secondary_help": guide.secondary_help,
             "requirement": guide.requirement,
             "example": guide.example,
             "note": guide.note,

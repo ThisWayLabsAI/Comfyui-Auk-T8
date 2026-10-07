@@ -4,8 +4,8 @@ let guides = {};
 let aliases = {};
 const guideUrl = new URL("../task_guides.json", import.meta.url);
 const aliasesUrl = new URL("../legacy_widget_values.json", import.meta.url);
-guideUrl.searchParams.set("v", "english-1");
-aliasesUrl.searchParams.set("v", "english-1");
+guideUrl.searchParams.set("v", "english-2");
+aliasesUrl.searchParams.set("v", "english-2");
 Promise.all([guideUrl, aliasesUrl].map(async (url) => {
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -26,17 +26,22 @@ function renderGuide(container, label) {
     }
     container.replaceChildren();
     const title = document.createElement("strong");
-    title.textContent = `Official usage · ${label}`;
+    title.textContent = `Usage & tuning · ${label}`;
     const requirement = document.createElement("div");
     requirement.textContent = guide.requirement;
-    const fields = document.createElement("div");
-    fields.textContent = `Fields: ${guide.primary_label}${guide.secondary_label ? ` | ${guide.secondary_label}` : ""}`;
+    const primary = document.createElement("div");
+    primary.textContent = `1. ${guide.primary_label}: ${guide.primary_help}`;
+    const secondary = document.createElement("div");
+    secondary.textContent = `2. ${guide.secondary_label}: ${guide.secondary_help}`;
+    primary.style.marginTop = "6px";
+    secondary.style.marginTop = "6px";
     const example = document.createElement("div");
     example.textContent = `Example: ${guide.example}`;
     const note = document.createElement("div");
-    note.textContent = guide.note;
+    note.textContent = `Tips: ${guide.note}`;
+    note.style.marginTop = "6px";
     note.style.opacity = "0.78";
-    container.append(title, requirement, fields, example, note);
+    container.append(title, requirement, primary, secondary, example, note);
 }
 
 app.registerExtension({
@@ -68,8 +73,8 @@ app.registerExtension({
             const guideWidget = this.addDOMWidget("auk_task_guide", "div", container, {
                 serialize: false,
                 hideOnZoom: false,
-                getMinHeight: () => 160,
-                getHeight: () => 160,
+                getMinHeight: () => 250,
+                getHeight: () => 250,
             });
             guideWidget.serialize = false;
             guideWidget.options = { ...(guideWidget.options || {}), serialize: false };
@@ -86,6 +91,20 @@ app.registerExtension({
                         widget.options.values = widget.options.values.filter((value) => !Object.hasOwn(values, value));
                     }
                 }
+                const guide = guides[taskWidget.value];
+                if (guide) {
+                    for (const [name, number] of [["primary", 1], ["secondary", 2]]) {
+                        const widget = this.widgets?.find((entry) => entry.name === name);
+                        if (!widget) continue;
+                        widget.label = `${number}. ${guide[`${name}_label`]}`;
+                        widget.options = { ...(widget.options || {}), tooltip: guide[`${name}_help`] };
+                        if (widget.inputEl) {
+                            widget.inputEl.placeholder = guide[`${name}_help`];
+                            widget.inputEl.title = guide[`${name}_help`];
+                            widget.inputEl.setAttribute("aria-label", widget.label);
+                        }
+                    }
+                }
                 renderGuide(container, taskWidget.value);
                 const durationWidget = this.widgets?.find((widget) => widget.name === "duration_mode");
                 if (!durationWidget) return;
@@ -94,6 +113,7 @@ app.registerExtension({
                 button.textContent = "↻ Adapt duration automatically";
                 button.title = "TTS uses target text; editing uses the actual input and task rules, ignoring connected Float.";
                 Object.assign(button.style, {
+                    display: "block", marginBottom: "6px",
                     marginTop: "6px", padding: "4px 10px", border: "1px solid #ff9dc8",
                     borderRadius: "6px", background: "#ffffff", color: "#b31765", cursor: "pointer",
                 });
