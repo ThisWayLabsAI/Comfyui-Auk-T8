@@ -2,39 +2,57 @@ from __future__ import annotations
 
 import copy
 import json
+import runpy
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_DIR = ROOT / "example_workflows"
 
-TASKS = (
-    ("01", "描述生成语音", False, "你好，欢迎使用 AuK ComfyUI 原生节点。", "自然、清晰、温暖的年轻女性声音", "描述生成"),
-    ("02", "参考声音克隆", True, "你好，这是使用参考声音生成的测试音频。", "", "声音克隆"),
-    ("03", "语音文字编辑", True, "把“今天下午开会”改成“明天上午开会”", "今天下午开会，请大家准时参加。", "语音文字编辑"),
-    ("04", "歌词编辑", True, "把歌词“明天你好”改成“未来你好”", "明天你好，声音多渺小。", "歌词编辑"),
-    ("05", "音高编辑", True, "+1", "", "音高编辑"),
-    ("06", "速度编辑", True, "1.25", "", "速度编辑"),
-    ("07", "音量编辑", True, "+5", "", "音量编辑"),
-    ("08", "情绪编辑", True, "悲伤", "", "情绪编辑"),
-    ("09", "音色编辑", True, "低沉磁性的年轻男声", "", "音色编辑"),
-    ("10", "去口音", True, "去掉方言口音，转换成标准普通话", "", "去口音"),
-    ("11", "非语言声音编辑", True, "在“欢迎回来”后增加笑声", "", "非语言声音编辑"),
-    ("12", "耳语转换", True, "转换成耳语", "", "耳语转换"),
-    ("13", "语音增强", True, "去噪并去除房间混响", "", "语音增强"),
-    ("14", "音质修复", True, "补充高频并提升清晰度", "", "音质修复"),
-    ("15", "说话人分离", True, "第一个开始说话的人", "", "说话人分离"),
-    ("16", "音乐人声提取", True, "只保留歌声，去掉说话和伴奏", "", "音乐人声提取"),
-    ("17", "指定说话人提取", True, "欢迎大家来到今天的节目", "", "指定说话人提取"),
+TASK_DATA = runpy.run_path(str(ROOT / "task_templates.py"))
+TASK_BY_KEY = TASK_DATA["TASK_BY_KEY"]
+
+# Number, stable task key, primary sample, optional transcript/description, filename.
+EXAMPLES = (
+    ("01", "instruct_tts", "Hello, welcome to the native AuK ComfyUI nodes.", "A natural, clear, warm young female voice", "Instruction-TTS"),
+    ("02", "zero_shot_tts", "Hello, this is a test using the reference voice.", "", "Voice-Cloning"),
+    ("03", "content_edit", "Replace 'this afternoon' with 'tomorrow morning'.", "The meeting is this afternoon. Please arrive on time.", "Speech-Text-Editing"),
+    ("04", "lyric_edit", "Change 'hello tomorrow' to 'hello future' in the vocal recording.", "Hello tomorrow, how small our voices are.", "Lyric-Editing"),
+    ("05", "pitch", "+1", "", "Pitch-Editing"),
+    ("06", "speed", "1.25", "", "Speed-Editing"),
+    ("07", "volume", "+5", "", "Volume-Editing"),
+    ("08", "emotion", "sad", "", "Emotion-Editing"),
+    ("09", "timbre", "A deep, resonant young male voice", "", "Timbre-Editing"),
+    ("10", "deaccent", "Remove the regional accent", "", "Accent-Removal"),
+    ("11", "nonverbal", "Add laughter after 'welcome back'.", "", "Nonverbal-Sound-Editing"),
+    ("12", "whisper", "Convert to whisper", "", "Whisper-Conversion"),
+    ("13", "enhance", "Remove noise and room reverb", "", "Speech-Enhancement"),
+    ("14", "quality", "Restore high frequencies and clarity", "", "Audio-Quality-Repair"),
+    ("15", "speech_separate", "The first speaker", "", "Speaker-Separation"),
+    ("16", "music_separate", "Keep only singing vocals", "", "Music-Vocal-Extraction"),
+    ("17", "target_speaker", "Welcome to today's program", "", "Target-Speaker-Extraction"),
 )
+
+OUTPUT_NAMES = {
+    "AuKModelLoader": ("AuK Model",),
+    "AuKGenerateEdit": ("Generated audio", "Final instruction", "Run metadata JSON", "Resolved target duration (seconds)"),
+    "AuKAudioTrim": ("Trimmed audio", "Trimmed duration (seconds)", "Trim details"),
+}
 
 
 def main() -> None:
-    no_audio = json.loads((WORKFLOW_DIR / "AuK-01-描述生成语音.json").read_text(encoding="utf-8"))
-    with_audio = json.loads((WORKFLOW_DIR / "AuK-03-语音文字编辑.json").read_text(encoding="utf-8"))
-    for path in WORKFLOW_DIR.glob("AuK-*.json"):
-        path.unlink()
-    for number, label, needs_audio, primary, secondary, save_name in TASKS:
+    if {entry[1] for entry in EXAMPLES} != set(TASK_BY_KEY):
+        raise ValueError("Example coverage differs from task definitions; update the English examples")
+    expected_paths = {WORKFLOW_DIR / f"AuK-{number}-{filename}.json" for number, _, _, _, filename in EXAMPLES}
+    unexpected = set(WORKFLOW_DIR.glob("AuK-*.json")) - expected_paths
+    if unexpected:
+        raise ValueError(f"Unexpected workflow paths; reconcile upstream renames first: {sorted(map(str, unexpected))}")
+    no_audio = json.loads((WORKFLOW_DIR / "AuK-01-Instruction-TTS.json").read_text(encoding="utf-8"))
+    with_audio = json.loads((WORKFLOW_DIR / "AuK-03-Speech-Text-Editing.json").read_text(encoding="utf-8"))
+    duration_data = runpy.run_path(str(ROOT / "duration.py"))
+    for number, key, primary, secondary, filename in EXAMPLES:
+        task = TASK_BY_KEY[key]
+        label, needs_audio = task.label, task.needs_audio
         workflow = copy.deepcopy(with_audio if needs_audio else no_audio)
         loader = next(node for node in workflow["nodes"] if node["type"] == "AuKModelLoader")
         generator = next(node for node in workflow["nodes"] if node["type"] == "AuKGenerateEdit")
@@ -50,14 +68,14 @@ def main() -> None:
             32,
             2.0,
             -1.0,
-            "自动适配（按任务规则）",
+            duration_data["AUTO_TASK_DURATION_MODE"],
         ]
         generator["size"] = [520, 640]
         if not any(output.get("type") == "FLOAT" for output in generator["outputs"]):
             generator["outputs"].append({
-                "name": "实际目标时长（秒）", "type": "FLOAT", "links": None, "slot_index": 3,
+                "name": "Resolved target duration (seconds)", "type": "FLOAT", "links": None, "slot_index": 3,
             })
-        saver["widgets_values"] = [f"auk/{save_name}"]
+        saver["widgets_values"] = [f"auk/{filename}"]
         if needs_audio:
             audio_loader = next(node for node in workflow["nodes"] if node["type"] == "LoadAudio")
             audio_loader["widgets_values"] = ["auk_input.wav"]
@@ -71,9 +89,9 @@ def main() -> None:
                 "flags": {}, "order": 2, "mode": 0,
                 "inputs": [{"name": "audio", "type": "AUDIO", "link": 2}],
                 "outputs": [
-                    {"name": "裁剪音频", "type": "AUDIO", "links": [5], "slot_index": 0},
-                    {"name": "裁剪时长（秒）", "type": "FLOAT", "links": None, "slot_index": 1},
-                    {"name": "裁剪说明", "type": "STRING", "links": None, "slot_index": 2},
+                    {"name": "Trimmed audio", "type": "AUDIO", "links": [5], "slot_index": 0},
+                    {"name": "Trimmed duration (seconds)", "type": "FLOAT", "links": None, "slot_index": 1},
+                    {"name": "Trim details", "type": "STRING", "links": None, "slot_index": 2},
                 ],
                 "properties": {"Node name for S&R": "AuKAudioTrim"},
                 "widgets_values": [0.0, 0.0],
@@ -91,8 +109,33 @@ def main() -> None:
         for node in workflow["nodes"]:
             if node["type"].startswith("AuK"):
                 node["properties"].update({"cnr_id": "auk-t8", "ver": "2.0.8"})
-        path = WORKFLOW_DIR / f"AuK-{number}-{label}.json"
+                for output, name in zip(node["outputs"], OUTPUT_NAMES[node["type"]]):
+                    output["name"] = name
+        path = WORKFLOW_DIR / f"AuK-{number}-{filename}.json"
         path.write_text(json.dumps(workflow, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    # Keep frontend guides and migration aliases derived from the backend definitions.
+    guides = {}
+    for task in TASK_DATA["TASKS"]:
+        guide = TASK_DATA["TASK_GUIDES"][task.key]
+        guides[task.label] = {
+            "key": task.key,
+            "primary_label": task.primary_label,
+            "secondary_label": task.secondary_label,
+            "requirement": guide.requirement,
+            "example": guide.example,
+            "note": guide.note,
+        }
+    (ROOT / "web" / "task_guides.json").write_text(
+        json.dumps(guides, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+    )
+    aliases = {
+        "task": {label: TASK_BY_KEY[key].label for label, key in TASK_DATA["LEGACY_TASK_LABELS"].items()},
+        "duration_mode": duration_data["DURATION_MODE_ALIASES"],
+    }
+    (ROOT / "web" / "legacy_widget_values.json").write_text(
+        json.dumps(aliases, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

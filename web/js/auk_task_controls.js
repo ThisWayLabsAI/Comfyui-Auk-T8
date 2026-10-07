@@ -1,15 +1,19 @@
 import { app } from "../../../scripts/app.js";
 
 let guides = {};
+let aliases = {};
 const guideUrl = new URL("../task_guides.json", import.meta.url);
-guideUrl.searchParams.set("v", "2.0.8");
-fetch(guideUrl, { cache: "no-store" })
-    .then((response) => {
+const aliasesUrl = new URL("../legacy_widget_values.json", import.meta.url);
+guideUrl.searchParams.set("v", "english-1");
+aliasesUrl.searchParams.set("v", "english-1");
+Promise.all([guideUrl, aliasesUrl].map(async (url) => {
+        const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
-    })
-    .then((value) => {
+    }))
+    .then(([value, legacy]) => {
         guides = value;
+        aliases = legacy;
         for (const node of app.graph?._nodes || []) node.aukRefreshTaskGuide?.();
     })
     .catch((error) => console.error("AuK task guide failed to load", error));
@@ -17,18 +21,18 @@ fetch(guideUrl, { cache: "no-store" })
 function renderGuide(container, label) {
     const guide = guides[label];
     if (!guide) {
-        container.textContent = "正在载入 AuK 官方任务要求…";
+        container.textContent = "Loading AuK task requirements…";
         return;
     }
     container.replaceChildren();
     const title = document.createElement("strong");
-    title.textContent = `官方用法 · ${label}`;
+    title.textContent = `Official usage · ${label}`;
     const requirement = document.createElement("div");
     requirement.textContent = guide.requirement;
     const fields = document.createElement("div");
-    fields.textContent = `填写：${guide.primary_label}${guide.secondary_label ? `｜${guide.secondary_label}` : ""}`;
+    fields.textContent = `Fields: ${guide.primary_label}${guide.secondary_label ? ` | ${guide.secondary_label}` : ""}`;
     const example = document.createElement("div");
-    example.textContent = `示例：${guide.example}`;
+    example.textContent = `Example: ${guide.example}`;
     const note = document.createElement("div");
     note.textContent = guide.note;
     note.style.opacity = "0.78";
@@ -71,13 +75,24 @@ app.registerExtension({
             guideWidget.options = { ...(guideWidget.options || {}), serialize: false };
 
             this.aukRefreshTaskGuide = () => {
+                // Schemas accept upstream values for API compatibility; the UI
+                // migrates them and presents only English choices.
+                for (const name of ["task", "duration_mode"]) {
+                    const widget = this.widgets?.find((entry) => entry.name === name);
+                    const values = aliases[name];
+                    if (!widget || !values) continue;
+                    if (Object.hasOwn(values, widget.value)) widget.value = values[widget.value];
+                    if (Array.isArray(widget.options?.values)) {
+                        widget.options.values = widget.options.values.filter((value) => !Object.hasOwn(values, value));
+                    }
+                }
                 renderGuide(container, taskWidget.value);
                 const durationWidget = this.widgets?.find((widget) => widget.name === "duration_mode");
                 if (!durationWidget) return;
                 const button = document.createElement("button");
                 button.type = "button";
-                button.textContent = "↻ 自动适配时长";
-                button.title = "TTS 按目标文本估时；编辑按实际输入和任务规则计算，忽略连接的 Float。";
+                button.textContent = "↻ Adapt duration automatically";
+                button.title = "TTS uses target text; editing uses the actual input and task rules, ignoring connected Float.";
                 Object.assign(button.style, {
                     marginTop: "6px", padding: "4px 10px", border: "1px solid #ff9dc8",
                     borderRadius: "6px", background: "#ffffff", color: "#b31765", cursor: "pointer",
@@ -89,7 +104,7 @@ app.registerExtension({
                         Number(secondsWidget.value) < 0.2 || Number(secondsWidget.value) > 30)) {
                         secondsWidget.value = 3;
                     }
-                    durationWidget.value = "自动适配（按任务规则）";
+                    durationWidget.value = "Automatic adaptation (task rules)";
                     durationWidget.callback?.(durationWidget.value);
                     app.graph?.setDirtyCanvas(true, true);
                 };

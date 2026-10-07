@@ -19,7 +19,7 @@ def test_automatic_duration_mode_is_visible_and_default(plugin):
     mode = next(value for value in schema.inputs if value.id == "duration_mode")
     assert mode.default == plugin.duration.AUTO_TASK_DURATION_MODE
     assert not mode.advanced
-    assert "适配" in mode.display_name
+    assert "adaptation" in mode.display_name
     assert plugin.duration.MANUAL_DURATION_MODE in mode.options
     assert schema.outputs[-1].io_type == "FLOAT"
 
@@ -63,7 +63,7 @@ def test_trim_rejects_invalid_audio_contract(plugin, bad_audio):
 
 
 def test_trim_reports_missing_audio_clearly(plugin):
-    with pytest.raises(ValueError, match="连接原始音频"):
+    with pytest.raises(ValueError, match="connected source audio"):
         plugin.nodes.AuKAudioTrim.execute(None)
 
 
@@ -104,7 +104,7 @@ def test_native_decoder_preserves_raw_peaks_until_output_protection(plugin):
 
 @pytest.mark.parametrize("waveform", [torch.empty(1, 0), torch.zeros(1, 1, 2), torch.tensor([[float("nan")]])])
 def test_invalid_model_output_is_reported_instead_of_published_as_audio(plugin, waveform):
-    with pytest.raises(ValueError, match="模型输出"):
+    with pytest.raises(ValueError, match="Model output"):
         plugin.preprocess.protect_audio_output(waveform)
 
 
@@ -118,7 +118,7 @@ def test_trim_is_sample_exact_and_preserves_channels(plugin, start, end, frames)
     assert audio["sample_rate"] == 10
     assert audio["waveform"].shape == (1, 2, frames)
     assert seconds == frames / 10
-    assert "实际输入" in note
+    assert "Actual input" in note
     assert torch.equal(audio["waveform"], original[..., round(start * 10):round(start * 10) + frames])
     audio["waveform"].zero_()
     assert torch.equal(waveform, original)
@@ -127,7 +127,7 @@ def test_trim_is_sample_exact_and_preserves_channels(plugin, start, end, frames)
 def test_extreme_finite_crop_values_report_or_clamp_without_overflow(plugin):
     audio = {"waveform": torch.ones(1, 1, 40), "sample_rate": 10}
     assert plugin.nodes.AuKAudioTrim.execute(audio, 0, 1e308).result[1] == 4
-    with pytest.raises(ValueError, match="开始超出"):
+    with pytest.raises(ValueError, match="Trim start exceeds"):
         plugin.nodes.AuKAudioTrim.execute(audio, 1e308, 0)
 
 
@@ -162,7 +162,7 @@ def test_recut_uses_original_load_audio_without_reupload(plugin):
 
 
 def test_long_tts_reports_duration_instead_of_silently_truncating(plugin):
-    with pytest.raises(ValueError, match="分段"):
+    with pytest.raises(ValueError, match="separate segments"):
         plugin.duration.estimate_tts_seconds("欢迎使用。" * 100)
 
 
@@ -170,7 +170,7 @@ def test_exact_30_seconds_accepts_internal_padding_and_rejects_one_extra_sample(
     engine = FakeEngine()
     prepared = (torch.zeros(1, round(30.2 * 24_000)), 24_000)
     plugin.nodes.validate_sequence_duration(engine, prepared, 30, input_seconds=30)
-    with pytest.raises(ValueError, match="裁剪"):
+    with pytest.raises(ValueError, match="trim"):
         plugin.nodes.validate_sequence_duration(engine, (torch.zeros(1, 30 * 24_000 + 1), 24_000), 3)
 
 
@@ -179,7 +179,7 @@ def test_over_limit_raw_input_is_rejected_before_vad_can_hide_it(plugin, monkeyp
         pytest.fail("VAD must not hide an over-limit original input")
 
     monkeypatch.setattr(plugin.nodes, "prepare_model_audio", forbidden)
-    with pytest.raises(ValueError, match="裁剪"):
+    with pytest.raises(ValueError, match="trim"):
         plugin.nodes.AuKGenerateEdit.execute(
             FakeEngine(), "音高编辑", "+1", "", 1, 42,
             input_audio={"waveform": torch.zeros(1, 1, 31 * 24_000), "sample_rate": 24_000},
@@ -235,7 +235,9 @@ def test_all_workflow_links_are_consistent_and_audio_routes_through_trim(plugin)
 def test_workflow_generator_is_idempotent(plugin):
     root = Path(plugin.__file__).parent
     def hashes():
-        return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (root / "example_workflows").glob("*.json")}
+        paths = [*(root / "example_workflows").glob("*.json"),
+                 root / "web/task_guides.json", root / "web/legacy_widget_values.json"]
+        return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     before = hashes()
     subprocess.run([sys.executable, str(root / "tools/generate_example_workflows.py")], check=True)
     assert hashes() == before

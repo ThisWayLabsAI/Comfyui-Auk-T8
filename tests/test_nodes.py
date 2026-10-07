@@ -160,7 +160,7 @@ def test_signed_adjustments_reject_unsupported_values(plugin, task_key, value):
 
 @pytest.mark.parametrize("value", ["升高 -2 个半音", "降低 +2 个半音"])
 def test_signed_adjustments_reject_conflicting_direction(plugin, value):
-    with pytest.raises(ValueError, match="冲突"):
+    with pytest.raises(ValueError, match="Conflicting"):
         plugin.nodes.build_instruction("pitch", value)
 
 
@@ -171,7 +171,7 @@ def test_speed_uses_supported_official_multipliers(plugin, value, expected):
 
 @pytest.mark.parametrize("value", ["1", "1.8", "快一点"])
 def test_speed_rejects_ambiguous_or_unsupported_values(plugin, value):
-    with pytest.raises(ValueError, match="速度倍率"):
+    with pytest.raises(ValueError, match="Speed multiplier"):
         plugin.nodes.build_instruction("speed", value)
 
 
@@ -179,9 +179,9 @@ def test_nonverbal_requests_are_canonicalized_and_unknown_events_rejected(plugin
     assert plugin.nodes.build_instruction("nonverbal", "在开头增加笑声") == "在语音开头增加笑声。"
     assert plugin.nodes.build_instruction("nonverbal", "删除全部呼吸") == "删除音频中所有的呼吸声。"
     assert plugin.nodes.build_instruction("nonverbal", "在“欢迎回来”后增加叹气") == "在“欢迎回来”后增加叹气声。"
-    with pytest.raises(ValueError, match="未识别非语言声音"):
+    with pytest.raises(ValueError, match="Unrecognized nonverbal sound"):
         plugin.nodes.build_instruction("nonverbal", "在开头增加火车声")
-    with pytest.raises(ValueError, match="明确删除"):
+    with pytest.raises(ValueError, match="Specify removal"):
         plugin.nodes.build_instruction("nonverbal", "增加笑声")
 
 
@@ -210,7 +210,7 @@ def test_normalize_audio_downmixes_to_mono(plugin):
 
 
 def test_audio_task_requires_audio(plugin):
-    with pytest.raises(ValueError, match="需要连接"):
+    with pytest.raises(ValueError, match="requires connected"):
         plugin.nodes.AuKGenerateEdit.execute(
             FakeEngine(),
             "参考声音克隆",
@@ -466,7 +466,7 @@ def test_sequence_limit_checks_source_and_target_independently(plugin):
 def test_sequence_limit_rejects_sub_frame_reference(plugin):
     engine = FakeEngine()
     source = (torch.zeros(1, engine.downsample_rate - 1), engine.target_sample_rate)
-    with pytest.raises(ValueError, match="输入音频过短"):
+    with pytest.raises(ValueError, match="Input audio is too short"):
         plugin.nodes.validate_sequence_duration(engine, source, 1.0)
 
 

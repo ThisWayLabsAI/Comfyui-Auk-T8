@@ -23,122 +23,127 @@ class TaskGuide:
 
 
 TASKS: tuple[TaskTemplate, ...] = (
-    TaskTemplate("instruct_tts", "语音生成", "描述生成语音", False, "目标文本", "声音描述", "tts"),
-    TaskTemplate("zero_shot_tts", "语音生成", "参考声音克隆", True, "目标文本", "声音克隆无需填写", "tts"),
-    TaskTemplate(
-        "content_edit", "音频编辑", "语音文字编辑", True,
-        "编辑要求（一次只改一处）", "原音频完整文字（可选，仅估算时长）", "content",
-    ),
-    TaskTemplate(
-        "lyric_edit", "音频编辑", "歌词编辑", True,
-        "歌词修改要求（一次只改一处）", "原音频完整歌词（可选，仅估算时长）", "content",
-    ),
-    TaskTemplate("pitch", "音频编辑", "音高编辑", True, "半音变化", "附加要求（可选）", "source"),
-    TaskTemplate("speed", "音频编辑", "速度编辑", True, "速度倍率", "附加要求（可选）", "speed"),
-    TaskTemplate("volume", "音频编辑", "音量编辑", True, "分贝变化", "附加要求（可选）", "source"),
-    TaskTemplate("emotion", "音频编辑", "情绪编辑", True, "目标情绪", "附加要求（可选）", "emotion"),
-    TaskTemplate("timbre", "音频编辑", "音色编辑", True, "目标音色描述", "附加要求（可选）", "source"),
-    TaskTemplate("deaccent", "音频编辑", "去口音", True, "去口音要求", "附加要求（可选）", "source"),
-    TaskTemplate(
-        "nonverbal", "音频编辑", "非语言声音编辑", True,
-        "添加/移除要求", "无需填写", "nonverbal",
-    ),
-    TaskTemplate("whisper", "音频编辑", "耳语转换", True, "转换方向", "附加要求（可选）", "source"),
-    TaskTemplate("enhance", "修复与分离", "语音增强", True, "修复要求", "附加要求（可选）", "source"),
-    TaskTemplate("quality", "修复与分离", "音质修复", True, "音质问题或修复要求", "无需填写", "source"),
-    TaskTemplate("speech_separate", "修复与分离", "说话人分离", True, "开始说话顺序", "可选：去噪 / 去混响", "source"),
-    TaskTemplate("music_separate", "修复与分离", "音乐人声提取", True, "保留内容", "附加要求（可选）", "source"),
-    TaskTemplate("target_speaker", "修复与分离", "指定说话人提取", True, "目标说出的内容", "可选：去噪 / 去混响", "source"),
+    TaskTemplate("instruct_tts", "Speech generation", "Instruction TTS", False, "Target text", "Voice description", "tts"),
+    TaskTemplate("zero_shot_tts", "Speech generation", "Voice cloning", True, "Target text", "Leave blank for voice cloning", "tts"),
+    TaskTemplate("content_edit", "Audio editing", "Speech text editing", True,
+                 "Edit request (one change at a time)", "Full source transcript (optional, duration estimate only)", "content"),
+    TaskTemplate("lyric_edit", "Audio editing", "Lyric editing", True,
+                 "Lyric replacement (one change at a time)", "Full source lyrics (optional, duration estimate only)", "content"),
+    TaskTemplate("pitch", "Audio editing", "Pitch editing", True, "Semitone change", "Additional requirements (optional)", "source"),
+    TaskTemplate("speed", "Audio editing", "Speed editing", True, "Speed multiplier", "Additional requirements (optional)", "speed"),
+    TaskTemplate("volume", "Audio editing", "Volume editing", True, "Decibel change", "Additional requirements (optional)", "source"),
+    TaskTemplate("emotion", "Audio editing", "Emotion editing", True, "Target emotion", "Additional requirements (optional)", "emotion"),
+    TaskTemplate("timbre", "Audio editing", "Timbre editing", True, "Target voice description", "Additional requirements (optional)", "source"),
+    TaskTemplate("deaccent", "Audio editing", "Accent removal", True, "Accent removal request", "Additional requirements (optional)", "source"),
+    TaskTemplate("nonverbal", "Audio editing", "Nonverbal sound editing", True, "Add/remove request", "Leave blank", "nonverbal"),
+    TaskTemplate("whisper", "Audio editing", "Whisper conversion", True, "Conversion direction", "Additional requirements (optional)", "source"),
+    TaskTemplate("enhance", "Repair and separation", "Speech enhancement", True, "Cleanup request", "Additional requirements (optional)", "source"),
+    TaskTemplate("quality", "Repair and separation", "Audio quality repair", True, "Audio defect or repair request", "Leave blank", "source"),
+    TaskTemplate("speech_separate", "Repair and separation", "Speaker separation", True, "Speaker order", "Optional: denoise / dereverb", "source"),
+    TaskTemplate("music_separate", "Repair and separation", "Music vocal extraction", True, "Vocals to keep", "Additional requirements (optional)", "source"),
+    TaskTemplate("target_speaker", "Repair and separation", "Target speaker extraction", True, "Words spoken by the target", "Optional: denoise / dereverb", "source"),
 )
+
+# Stable aliases for upstream workflow files and programmatic clients.
+LEGACY_TASK_LABELS = {
+    "描述生成语音": "instruct_tts", "参考声音克隆": "zero_shot_tts",
+    "语音文字编辑": "content_edit", "歌词编辑": "lyric_edit",
+    "音高编辑": "pitch", "速度编辑": "speed", "音量编辑": "volume",
+    "情绪编辑": "emotion", "音色编辑": "timbre", "去口音": "deaccent",
+    "非语言声音编辑": "nonverbal", "耳语转换": "whisper", "语音增强": "enhance",
+    "音质修复": "quality", "说话人分离": "speech_separate",
+    "音乐人声提取": "music_separate", "指定说话人提取": "target_speaker",
+}
 
 TASK_BY_KEY = {task.key: task for task in TASKS}
 TASK_BY_LABEL = {task.label: task for task in TASKS}
+TASK_BY_LABEL.update({label: TASK_BY_KEY[key] for label, key in LEGACY_TASK_LABELS.items()})
 
 TASK_GUIDES: dict[str, TaskGuide] = {
     "instruct_tts": TaskGuide(
-        "不需要音频；填写要念的目标文本和声音描述。",
-        "目标文本：欢迎回来，今天辛苦了。｜声音描述：年轻女生，温柔、关心、语速稍慢。",
-        "这是按文字描述随机生成声音；要克隆真人音色请选择“参考声音克隆”。",
+        "No audio required. Enter the words to speak and a voice description.",
+        "Target text: Welcome back. | Voice description: A warm, clear young female voice.",
+        "Generates a voice from a description. Choose Voice cloning to match a recorded speaker.",
     ),
     "zero_shot_tts": TaskGuide(
-        "必须上传单人、清晰的参考语音；只填写要念的新文本。",
-        "目标文本：大家好，欢迎收看今天的节目。",
-        "无需填写参考音频原文或声音描述；程序使用 AuK 官方固定克隆提示词。",
+        "Connect clear reference speech from one speaker. Enter only the new words to speak.",
+        "Target text: Hello, and welcome to today's program.",
+        "Leave the reference transcript and voice description blank; AuK uses its official fixed cloning prompt.",
     ),
     "content_edit": TaskGuide(
-        "必须上传普通说话录音；一次只做一处插入、删除或替换，并写出准确原词。",
-        "把“今天下午开会”改成“明天上午开会”",
-        "也可写：删掉“那个”；在“你好”后面加上“呀”。完整原文只填到下方可选框，用于估算时长。",
+        "Connect ordinary spoken audio. Make one replacement, insertion, or deletion, using the exact original words.",
+        "Replace 'this afternoon' with 'tomorrow morning'.",
+        "Also: Insert 'everyone' after 'Hello'; Delete 'um'. The optional full transcript is used only for duration estimation.",
     ),
     "lyric_edit": TaskGuide(
-        "必须上传无伴奏、隔离干净的独唱（a cappella）；一次只替换一处，原歌词必须与实际唱词一致。",
-        "把歌词“明天你好”改成“未来你好”",
-        "普通说话录音请使用“语音文字编辑”。完整歌词只填到下方可选框，用于估算时长。",
+        "Connect clean, isolated solo singing without accompaniment (a cappella). Replace one phrase matching the actual lyrics.",
+        "Change 'hello tomorrow' to 'hello future' in the vocal recording.",
+        "Use Speech text editing for spoken audio. The optional full lyrics are used only for duration estimation.",
     ),
     "pitch": TaskGuide(
-        "必须上传音频；只支持带方向的 ±1、±2、±3 个半音。",
-        "+1（升高一个半音）或 -2（降低两个半音）",
-        "0 或其他数值不属于模型官方档位。",
+        "Connect audio. Supported changes are +/-1, +/-2, or +/-3 semitones.",
+        "+1 (one semitone higher) or -2 (two semitones lower)",
+        "Zero and other values are outside the model's supported settings.",
     ),
     "speed": TaskGuide(
-        "必须上传音频；只支持 0.5、0.75、1.25、1.5、2.0 倍。",
-        "0.75（稍慢）或 1.25（稍快）",
-        "1.0 不会产生变化；实际目标时长按“有效语音时长 ÷ 速度倍率”计算，忽略手动时长和 Float。",
+        "Connect audio. Supported multipliers: 0.5, 0.75, 1.25, 1.5, 2.0.",
+        "0.75 (slower) or 1.25 (faster)",
+        "1.0 makes no change. Duration is effective speech duration divided by the multiplier; manual duration and Float are ignored.",
     ),
     "volume": TaskGuide(
-        "必须上传音频；只支持带方向的 ±5、±10、±15 分贝。",
-        "+5（增大音量）或 -10（减小音量）",
-        "0 dB 不会产生变化。",
+        "Connect audio. Supported changes are +/-5, +/-10, or +/-15 dB.",
+        "+5 (louder) or -10 (quieter)",
+        "Zero dB makes no change.",
     ),
     "emotion": TaskGuide(
-        "必须上传说话音频；目标情感限开心、愤怒、悲伤、恐惧、惊讶、厌恶、平静、兴奋。英文音频可填对应英文。",
-        "中文音频：悲伤｜英文音频：sad 或 fearful",
-        "保持原说话内容和音色，只改变情感；请让输入语言与填写语言一致。",
+        "Connect spoken audio. Choose happy, angry, sad, fearful, surprised, disgusted, calm, or excited.",
+        "sad or fearful",
+        "Preserves words and voice identity. Match the request language to the source speech; Chinese requests remain supported.",
     ),
     "timbre": TaskGuide(
-        "必须上传说话音频；用文字描述目标音色。",
-        "低沉磁性的年轻男声",
-        "保持原内容，只改变音色；如要念新文本请选择语音生成任务。",
+        "Connect spoken audio and describe the desired voice.",
+        "A deep, resonant young male voice",
+        "Changes voice character while preserving the words. Choose a speech generation task to speak new text.",
     ),
     "deaccent": TaskGuide(
-        "必须上传带口音或方言腔的说话音频。",
-        "去掉方言口音，转换成标准普通话",
-        "保持原说话人音色和内容。",
+        "Connect spoken audio with a regional or dialect accent.",
+        "Remove the regional accent",
+        "Preserves the speaker's voice and words. The official prompt targets regional accent removal.",
     ),
     "nonverbal": TaskGuide(
-        "必须上传音频；一次添加或删除一种笑声、呼吸声、叹气、咳嗽等非语言声音。",
-        "在“欢迎回来”后增加笑声",
-        "也可写：删除音频中所有呼吸声；在语音开头增加叹气声。未知事件或缺少位置会在运行前报错。",
+        "Connect audio. Add or remove one event, such as laughter, breathing, a sigh, or a cough.",
+        "Add laughter after 'welcome back'.",
+        "Also: Remove all breathing; Add a sigh at the beginning. Unknown events or missing positions are rejected.",
     ),
     "whisper": TaskGuide(
-        "必须上传说话音频；明确选择转为耳语或转回正常说话。",
-        "转换成耳语",
-        "保持原说话内容和音色。",
+        "Connect spoken audio. Specify whisper conversion or a return to normal speech.",
+        "Convert to whisper",
+        "Preserves the words and voice identity.",
     ),
     "enhance": TaskGuide(
-        "必须上传说话音频；用于去噪、去底噪和去混响。",
-        "去噪并去除房间混响",
-        "会保留所有说话人；只保留某个人请使用说话人分离。",
+        "Connect spoken audio to remove background noise and/or room reverberation.",
+        "Remove noise and room reverb",
+        "Keeps all speakers. Use Speaker separation to keep only one speaker.",
     ),
     "quality": TaskGuide(
-        "必须上传说话音频；用于补高频/带宽扩展，或去电话、扩音器、水下闷声等音色缺陷。",
-        "补充高频并提升清晰度；或：去掉电话感",
-        "普通背景噪声和房间混响请选择“语音增强”。",
+        "Connect spoken audio to restore high frequencies/bandwidth or repair telephone, megaphone, or underwater coloration.",
+        "Restore high frequencies and clarity; or: Remove the telephone effect",
+        "Use Speech enhancement for ordinary background noise and room reverberation.",
     ),
     "speech_separate": TaskGuide(
-        "必须上传多说话人音频；按开始顺序指定保留对象。",
-        "第一个开始说话的人",
-        "输出保留所选说话人并去掉其他说话人；可在附加要求填“去噪”“去混响”或两者。",
+        "Connect audio with multiple speakers. Select a speaker by the order in which they start speaking.",
+        "The first speaker",
+        "Keeps the selected speaker. Additional requirements may include denoise, dereverb, or both.",
     ),
     "music_separate": TaskGuide(
-        "必须上传含伴奏的混合音频；明确要保留哪类人声。",
-        "只保留歌声，去掉说话和伴奏",
-        "如需保留说话和歌唱，可填“保留所有人声，去掉伴奏”。",
+        "Connect mixed audio with accompaniment and specify the vocals to retain.",
+        "Keep only singing vocals",
+        "Use 'Keep all vocals' to retain both speech and singing while removing accompaniment.",
     ),
     "target_speaker": TaskGuide(
-        "必须上传多说话人音频；填写目标说话人讲过的一小段准确内容。",
-        "欢迎大家来到今天的节目",
-        "程序用这段内容定位说话人并只保留该说话人；可在附加要求填“去噪”“去混响”或两者。",
+        "Connect audio with multiple speakers. Enter a short, exact phrase spoken by the target speaker.",
+        "Welcome to today's program",
+        "Uses those words to identify the speaker. Additional requirements may include denoise, dereverb, or both.",
     ),
 }
 
@@ -153,7 +158,7 @@ def _clean_replacement_slot(value: str) -> str:
 def _quoted_slot(value: str) -> str:
     cleaned = _clean_replacement_slot(value)
     if not cleaned:
-        raise ValueError("编辑内容不能为空")
+        raise ValueError("Edit content cannot be empty")
     return cleaned
 
 
@@ -174,7 +179,7 @@ def _canonical_replacement(value: str, *, lyrics: bool) -> str:
         if not original or not replacement:
             break
         if original == replacement:
-            raise ValueError("原词和替换词相同，不会产生变化")
+            raise ValueError("Original and replacement text are identical; no change would occur")
         if lyrics and language == "en":
             return f'Change "{original}" to "{replacement}" in the vocal recording.'
         if lyrics:
@@ -182,8 +187,8 @@ def _canonical_replacement(value: str, *, lyrics: bool) -> str:
         if language == "en":
             return f"Replace '{original}' with '{replacement}'."
         return f"把‘{original}’改成‘{replacement}’"
-    task_name = "歌词编辑" if lyrics else "语音文字编辑"
-    raise ValueError(f"{task_name}格式不正确，请按上方示例填写，并且一次只改一处")
+    task_name = "lyric editing" if lyrics else "speech text editing"
+    raise ValueError(f"Invalid {task_name} request; follow the example and make one change at a time")
 
 
 def _canonical_content_edit(value: str) -> str:
@@ -191,8 +196,28 @@ def _canonical_content_edit(value: str) -> str:
     try:
         return _canonical_replacement(text, lyrics=False)
     except ValueError as replacement_error:
-        if "原词和替换词相同" in str(replacement_error):
+        if "Original and replacement text are identical" in str(replacement_error):
             raise
+
+    # English requests produce the same canonical model instructions as upstream.
+    english_insert = re.fullmatch(
+        r"""(?:insert|add)\s+["'](.+?)["']\s+(before|after)\s+["'](.+?)["'][.!]?""",
+        text, flags=re.IGNORECASE,
+    )
+    if english_insert:
+        added, side, anchor = english_insert.groups()
+        position = "前面" if side.casefold() == "before" else "后面"
+        return f"在‘{_quoted_slot(anchor)}’{position}加上‘{_quoted_slot(added)}’"
+    english_delete = re.fullmatch(
+        r"""(?:delete|remove)\s+["'](.+?)["'](?:\s+(before|after)\s+["'](.+?)["'])?[.!]?""",
+        text, flags=re.IGNORECASE,
+    )
+    if english_delete:
+        target, side, anchor = english_delete.groups()
+        if anchor:
+            position = "前" if side.casefold() == "before" else "后"
+            return f"删掉‘{_quoted_slot(anchor)}’{position}的‘{_quoted_slot(target)}’"
+        return f"删掉‘{_quoted_slot(target)}’"
 
     quoted = r"[\"'“‘]?(.+?)[\"'”’]?"
     insert_match = re.fullmatch(
@@ -219,11 +244,13 @@ def _canonical_content_edit(value: str) -> str:
     if delete_match is not None:
         return f"删掉‘{_quoted_slot(delete_match.group(1))}’"
 
-    raise ValueError("语音文字编辑格式不正确，请按上方替换、插入或删除示例填写，并且一次只改一处")
+    raise ValueError("Invalid speech text edit; use the replacement, insertion, or deletion examples and make one change at a time")
 
 
 def _signed_adjustment(value: str, *, allowed: tuple[int, ...], kind: str, unit: str) -> str:
     text = str(value or "").strip().replace("＋", "+").replace("－", "-")
+    error_kind = {"音调": "pitch", "音量": "volume"}.get(kind, kind)
+    error_unit = {"个半音": "semitones", "分贝": "dB"}.get(unit, unit)
     directions = {
         "increase": ("升高", "提高", "增加", "调高", "调大"),
         "decrease": ("降低", "减少", "调低", "调小"),
@@ -232,29 +259,29 @@ def _signed_adjustment(value: str, *, allowed: tuple[int, ...], kind: str, unit:
     for candidate, words in directions.items():
         if any(word in text for word in words):
             if direction is not None and direction != candidate:
-                raise ValueError(f"{kind}方向互相冲突：{value!r}")
+                raise ValueError(f"Conflicting {error_kind} directions: {value!r}")
             direction = candidate
     match = re.search(r"[+-]?\d+(?:\.0+)?", text)
     if match is None:
         choices = "/".join(str(item) for item in allowed)
-        raise ValueError(f"{kind}请输入带方向的数值，只支持 ±{choices}{unit}")
+        raise ValueError(f"Enter a signed {error_kind} value; supported values: +/-{choices} {error_unit}")
     remainder = (text[: match.start()] + text[match.end() :]).strip()
     for word in (*directions["increase"], *directions["decrease"], "个半音", "半音", "分贝", "dB", "db"):
         remainder = remainder.replace(word, "")
     if remainder.strip(" ，,。"):
-        raise ValueError(f"无法识别{kind}数值：{value!r}")
+        raise ValueError(f"Unrecognized {error_kind} value: {value!r}")
     numeric_text = match.group()
     numeric = float(numeric_text)
     if numeric == 0:
-        raise ValueError(f"{kind}不能为 0（不会产生变化）")
+        raise ValueError(f"{error_kind} cannot be zero (no change)")
     sign_direction = "decrease" if numeric < 0 else "increase"
     if direction is not None and numeric_text.startswith(("+", "-")) and direction != sign_direction:
-        raise ValueError(f"{kind}方向与数值符号冲突：{value!r}")
+        raise ValueError(f"Conflicting {error_kind} direction and numeric sign: {value!r}")
     direction = direction or sign_direction
     magnitude = abs(numeric)
     if magnitude not in allowed:
         choices = "/".join(str(item) for item in allowed)
-        raise ValueError(f"{kind}只支持 {choices}{unit}，当前为 {magnitude:g}{unit}")
+        raise ValueError(f"Supported {error_kind} values: {choices} {error_unit}; got {magnitude:g} {error_unit}")
     verb = "升高" if direction == "increase" else "降低"
     return f"将{kind}{verb}{magnitude:g}{unit}。"
 
@@ -263,7 +290,7 @@ def parse_speed_multiplier(value: str) -> float:
     text = str(value or "").strip().replace("×", "x")
     match = re.fullmatch(r"(0\.5|0\.75|1\.25|1\.5|2(?:\.0)?)(?:\s*(?:倍|[xX]))?", text)
     if match is None:
-        raise ValueError("速度倍率只支持 0.5、0.75、1.25、1.5 或 2.0")
+        raise ValueError("Speed multiplier must be 0.5, 0.75, 1.25, 1.5, or 2.0")
     return float(match.group(1))
 
 
@@ -302,7 +329,7 @@ def normalize_emotion(value: str) -> str:
     for alias, label in EMOTION_ALIASES.items():
         if alias in text:
             return label
-    raise ValueError("目标情感只支持：开心、愤怒、悲伤、恐惧、惊讶、厌恶、平静、兴奋")
+    raise ValueError("Supported emotions: happy, angry, sad, fearful, surprised, disgusted, calm, excited")
 
 
 def emotion_duration_multiplier(value: str) -> float:
@@ -331,7 +358,7 @@ def _content_duration_slots(task_key: str, primary: str) -> tuple[str | None, st
         english_lyric = re.fullmatch(r'Change "(.+?)" to "(.+?)" in the vocal recording\.', instruction)
         if english_lyric is not None:
             return english_lyric.group(2), english_lyric.group(1)
-        raise ValueError("无法解析歌词编辑要求")
+        raise ValueError("Cannot parse lyric edit request")
 
     replace_match = re.fullmatch(r"把‘(.+?)’改成‘(.+?)’", instruction)
     if replace_match is not None:
@@ -345,13 +372,13 @@ def _content_duration_slots(task_key: str, primary: str) -> tuple[str | None, st
     delete_match = re.fullmatch(r"删掉(?:‘.+?’[前后]的)?‘(.+?)’", instruction)
     if delete_match is not None:
         return None, delete_match.group(1)
-    raise ValueError("无法解析语音文字编辑要求")
+    raise ValueError("Cannot parse speech text edit request")
 
 
 def content_scaled_seconds(task_key: str, primary: str, source_seconds: float, transcript: str = "") -> float:
     """Apply AuK's official content-edit duration heuristic without running ASR."""
     if task_key not in {"content_edit", "lyric_edit"}:
-        raise ValueError(f"不支持的内容时长任务：{task_key}")
+        raise ValueError(f"Unsupported content duration task: {task_key}")
     add_text, delete_text = _content_duration_slots(task_key, primary)
     transcript_duration = spoken_duration_seconds(transcript)
     if transcript_duration > 0:
@@ -397,17 +424,17 @@ def _emotion_instruction(value: str) -> str:
 
 def _whisper_instruction(value: str) -> str:
     text = str(value or "").strip()
-    if any(word in text for word in ("正常", "别耳语", "非耳语")):
+    if any(word in text.casefold() for word in ("正常", "别耳语", "非耳语", "normal", "unwhisper")):
         return "把这段耳语转换成正常说话的声音。"
-    if any(word in text for word in ("耳语", "悄悄", "气声")):
+    if any(word in text.casefold() for word in ("耳语", "悄悄", "气声", "whisper")):
         return "用小声耳语的方式把这段话说出来。"
-    raise ValueError("耳语转换请填写“转换成耳语”或“转换成正常说话”")
+    raise ValueError("Enter 'Convert to whisper' or 'Convert to normal speech'")
 
 
 def _enhance_instruction(value: str) -> str:
-    text = str(value or "").strip()
-    has_noise = any(word in text for word in ("噪", "杂音", "底噪"))
-    has_reverb = any(word in text for word in ("混响", "回声"))
+    text = str(value or "").strip().casefold()
+    has_noise = any(word in text for word in ("噪", "杂音", "底噪", "noise", "denoise"))
+    has_reverb = any(word in text for word in ("混响", "回声", "reverb", "echo"))
     if has_noise and not has_reverb:
         return "请只去除这段音频中的背景噪声，保留说话人原有的房间混响以及其它音色，输出等长的去噪结果。"
     if has_reverb and not has_noise:
@@ -416,12 +443,12 @@ def _enhance_instruction(value: str) -> str:
 
 
 def _music_separation_instruction(value: str) -> str:
-    text = str(value or "").strip()
-    if "所有人声" in text:
+    text = str(value or "").strip().casefold()
+    if "所有人声" in text or "all vocals" in text:
         return "请保留所有人声，说话和歌唱都算，其余声音都去掉。"
-    if any(word in text for word in ("歌声", "歌唱", "唱歌")):
+    if any(word in text for word in ("歌声", "歌唱", "唱歌", "singing")):
         return "请只保留歌声，其余声音都去掉。"
-    raise ValueError("音乐人声提取请填写“只保留歌声”或“保留所有人声（说话和歌唱）”")
+    raise ValueError("Enter 'Keep only singing vocals' or 'Keep all vocals'")
 
 
 _NONVERBAL_ALIASES = {
@@ -452,7 +479,7 @@ def _nonverbal_sound(text: str) -> str:
     for alias in sorted(_NONVERBAL_ALIASES, key=len, reverse=True):
         if alias.casefold() in folded:
             return _NONVERBAL_ALIASES[alias]
-    raise ValueError("未识别非语言声音；请使用笑声、叹气、呼吸、咳嗽、清嗓、吸鼻、哈欠等官方事件")
+    raise ValueError("Unrecognized nonverbal sound; use laughter, sigh, breath, cough, throat clearing, sniff, yawn, or another supported event")
 
 
 def _nonverbal_instruction(value: str) -> str:
@@ -460,22 +487,26 @@ def _nonverbal_instruction(value: str) -> str:
     sound = _nonverbal_sound(text)
     if any(word in text.casefold() for word in ("删除", "删掉", "去掉", "移除", "remove", "delete")):
         return f"删除音频中所有的{sound}。"
-    if any(word in text for word in ("开头", "开始", "最前")):
+    if any(word in text.casefold() for word in ("开头", "开始", "最前", "beginning", "start")):
         return f"在语音开头增加{sound}。"
-    if any(word in text for word in ("结尾", "末尾", "最后")):
+    if any(word in text.casefold() for word in ("结尾", "末尾", "最后", "at the end")):
         return f"在语音结尾增加{sound}。"
+    english_anchor = re.search(r"""(before|after)\s+["'](.+?)["']""", text, flags=re.IGNORECASE)
+    if english_anchor:
+        side = "前" if english_anchor.group(1).casefold() == "before" else "后"
+        return f"在“{_quoted_slot(english_anchor.group(2))}”{side}增加{sound}。"
     anchor_match = re.search(r"[‘'“\"](.+?)[’'”\"]\s*(前面|前|后面|后)", text)
     if anchor_match is None:
-        raise ValueError("非语言声音编辑请明确删除、语音开头/结尾，或按示例用引号写锚点：在“欢迎回来”后增加笑声")
+        raise ValueError("Specify removal, beginning/end, or a quoted anchor; for example: Add laughter after 'welcome back'")
     anchor = _quoted_slot(anchor_match.group(1))
     side = "前" if anchor_match.group(2).startswith("前") else "后"
     return f"在“{anchor}”{side}增加{sound}。"
 
 
 def _cleanup_mode(value: str) -> str | None:
-    text = str(value or "")
-    denoise = any(word in text for word in ("去噪", "降噪", "去底噪", "去杂音", "去除噪声"))
-    dereverb = any(word in text for word in ("去混响", "去除混响", "去回声", "去除回声"))
+    text = str(value or "").casefold()
+    denoise = any(word in text for word in ("去噪", "降噪", "去底噪", "去杂音", "去除噪声", "denoise", "remove noise", "remove background noise"))
+    dereverb = any(word in text for word in ("去混响", "去除混响", "去回声", "去除回声", "dereverb", "remove reverb", "remove room reverb", "remove echo"))
     if denoise and dereverb:
         return "both"
     if denoise:
@@ -486,9 +517,9 @@ def _cleanup_mode(value: str) -> str | None:
 
 
 def _quality_instruction(value: str) -> str:
-    text = str(value or "").strip()
+    text = str(value or "").strip().casefold()
     cleanup = _cleanup_mode(text)
-    if any(word in text for word in ("带宽", "高频", "超分辨率", "清晰度", "补频")):
+    if any(word in text for word in ("带宽", "高频", "超分辨率", "清晰度", "补频", "bandwidth", "high frequencies", "clarity", "super-resolution")):
         if cleanup == "both":
             return "请对这段语音做超分辨率/带宽扩展处理，恢复被削掉的高频成分，同时完成去噪与去混响，输出宽带纯净人声。"
         if cleanup == "denoise":
@@ -497,12 +528,12 @@ def _quality_instruction(value: str) -> str:
             return "请对这段语音做超分辨率/带宽扩展处理，恢复被削掉的高频成分，同时去除房间混响，输出宽带纯净人声。"
         return "This audio suffers from limited bandwidth. Please restore it to a wideband, clear-sounding speech."
     effects = (
-        ("telephone", ("电话", "手机", "窄带")),
-        ("megaphone", ("扩音器", "喇叭", "广播")),
-        ("underwater", ("水下", "闷声", "发闷")),
-        ("clipping", ("削波", "破音", "爆音")),
-        ("dropout", ("丢包", "瞬断", "断续")),
-        ("dc", ("直流", "偏置")),
+        ("telephone", ("电话", "手机", "窄带", "telephone", "narrowband")),
+        ("megaphone", ("扩音器", "喇叭", "广播", "megaphone", "loudspeaker")),
+        ("underwater", ("水下", "闷声", "发闷", "underwater", "muffled")),
+        ("clipping", ("削波", "破音", "爆音", "clipping")),
+        ("dropout", ("丢包", "瞬断", "断续", "dropout", "packet loss")),
+        ("dc", ("直流", "偏置", "dc offset")),
     )
     prompts = {
         "telephone": {
@@ -545,7 +576,7 @@ def _quality_instruction(value: str) -> str:
     for effect, aliases in effects:
         if any(alias in text for alias in aliases):
             return prompts[effect][cleanup]
-    raise ValueError("音质修复请填写“补充高频并提升清晰度”，或明确电话、扩音器、水下闷声等音色问题")
+    raise ValueError("Specify 'Restore high frequencies and clarity' or an audio defect such as telephone, megaphone, or underwater coloration")
 
 
 _ZH_ORDINALS = {"一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
@@ -554,12 +585,22 @@ _ZH_ORDINALS = {"一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六
 def _speaker_order_instruction(primary: str, secondary: str) -> str:
     text = f"{primary} {secondary}".strip()
     match = re.search(r"第?\s*(\d+|[一二两三四五六七八九十])\s*(?:个|位)?(?:开始)?说话", text)
-    if match is None:
-        raise ValueError("说话人分离请填写开始说话的顺序，例如“第一个开始说话的人”")
-    raw = match.group(1)
-    order = int(raw) if raw.isdigit() else _ZH_ORDINALS[raw]
+    if match is not None:
+        raw = match.group(1)
+        order = int(raw) if raw.isdigit() else _ZH_ORDINALS[raw]
+    else:
+        english = re.search(r"\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|\d+(?:st|nd|rd|th)?)\s+speaker\b", text, flags=re.IGNORECASE)
+        numbered = re.search(r"\bspeaker\s+(\d+)\b", text, flags=re.IGNORECASE)
+        if english:
+            raw = english.group(1).casefold()
+            names = ("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth")
+            order = names.index(raw) + 1 if raw in names else int(re.match(r"\d+", raw).group())
+        elif numbered:
+            order = int(numbered.group(1))
+        else:
+            raise ValueError("Speaker separation requires speaker order, for example 'the first speaker'")
     if order < 1:
-        raise ValueError("说话人顺序必须从 1 开始")
+        raise ValueError("Speaker order must start at 1")
     zh = next((key for key, number in _ZH_ORDINALS.items() if number == order and key != "两"), str(order))
     cleanup = _cleanup_mode(text)
     if cleanup == "denoise":
@@ -594,9 +635,9 @@ def build_instruction(task_key: str, primary: str, secondary: str = "") -> str:
     primary = str(primary or "").strip()
     secondary = str(secondary or "").strip()
     if task_key not in TASK_BY_KEY:
-        raise ValueError(f"未知任务：{task_key}")
+        raise ValueError(f"Unknown task: {task_key}")
     if not primary:
-        raise ValueError("主要内容不能为空")
+        raise ValueError("Primary content cannot be empty")
     if task_key == "content_edit":
         return _canonical_content_edit(primary)
     if task_key == "lyric_edit":

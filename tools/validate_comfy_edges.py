@@ -30,7 +30,7 @@ async def main(args):
         ("manual_tts", "描述生成语音", "你好，这是固定三秒的测试。", None, 0, 0, None),
         ("input30_output30", "语音增强", "去噪并去除房间混响", "audit207_edges30.wav", 0, 0, None),
         ("one_extra_sample_rejected", "语音增强", "去噪", "audit207_edges_over30.wav", 0, 0, "30.000042"),
-        ("invalid_trim_rejected", None, "", "audit207_edges48.wav", 4, 2, "裁剪范围无效"),
+        ("invalid_trim_rejected", None, "", "audit207_edges48.wav", 4, 2, "Invalid trim range"),
         ("trim_recovers_after_error", None, "", "audit207_edges48.wav", 1, 3, None),
     ]
     report = {"version": "2.0.7", "started_at": time.time(), "cases": [], "all_succeeded": False}

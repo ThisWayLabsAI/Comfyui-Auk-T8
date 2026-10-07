@@ -1,0 +1,26 @@
+{
+  "task": {
+    "描述生成语音": "Instruction TTS",
+    "参考声音克隆": "Voice cloning",
+    "语音文字编辑": "Speech text editing",
+    "歌词编辑": "Lyric editing",
+    "音高编辑": "Pitch editing",
+    "速度编辑": "Speed editing",
+    "音量编辑": "Volume editing",
+    "情绪编辑": "Emotion editing",
+    "音色编辑": "Timbre editing",
+    "去口音": "Accent removal",
+    "非语言声音编辑": "Nonverbal sound editing",
+    "耳语转换": "Whisper conversion",
+    "语音增强": "Speech enhancement",
+    "音质修复": "Audio quality repair",
+    "说话人分离": "Speaker separation",
+    "音乐人声提取": "Music vocal extraction",
+    "指定说话人提取": "Target speaker extraction"
+  },
+  "duration_mode": {
+    "自动估算（TTS 推荐）": "Automatic estimate (TTS)",
+    "自动适配（按任务规则）": "Automatic adaptation (task rules)",
+    "手动指定": "Manual duration"
+  }
+}

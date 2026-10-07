@@ -17,6 +17,8 @@ from omegaconf import OmegaConf
 
 from .duration import (
     AUTO_DURATION_MODE,
+    DURATION_MODE_OPTIONS,
+    normalize_duration_mode,
     AUTO_TASK_DURATION_MODE,
     MANUAL_DURATION_MODE,
     TTS_TASK_KEYS,
@@ -85,23 +87,23 @@ def resolve_model_directory(directory_name: str, manifest: dict[str, Any]) -> Pa
         for filename, details in manifest[directory_name]["files"].items():
             path = directory / filename
             if not path.is_file():
-                directory_problems.append(f"缺少 {path}")
+                directory_problems.append(f"Missing {path}")
             elif path.stat().st_size != int(details["size"]):
-                directory_problems.append(f"大小不符 {path}")
+                directory_problems.append(f"Size mismatch: {path}")
         if not directory_problems:
             return directory
         problems.extend(directory_problems)
 
-    preview = "；".join(problems[:5])
+    preview = "; ".join(problems[:5])
     if len(problems) > 5:
-        preview += f"；另有 {len(problems) - 5} 个文件"
-    searched = "、".join(str(root) for root in model_search_roots())
-    raise FileNotFoundError(f"AuK 模型目录 {directory_name} 不完整：{preview}。已搜索：{searched}")
+        preview += f"; {len(problems) - 5} more files"
+    searched = ", ".join(str(root) for root in model_search_roots())
+    raise FileNotFoundError(f"AuK model directory {directory_name} is incomplete: {preview}. Searched: {searched}")
 
 
 def resolve_model_files(model_variant: str) -> tuple[Path, Path, Path]:
     if model_variant not in MODEL_VARIANTS:
-        raise ValueError(f"未知模型：{model_variant}")
+        raise ValueError(f"Unknown model: {model_variant}")
     model_directory, checkpoint_name = MODEL_VARIANTS[model_variant]
     qwen_directory = "Qwen2.5-Omni-3B"
     manifest = load_manifest()["models"]
@@ -111,8 +113,8 @@ def resolve_model_files(model_variant: str) -> tuple[Path, Path, Path]:
     except FileNotFoundError as exc:
         download_variant = "flash" if model_directory == "AuK-Flash" else "base"
         raise FileNotFoundError(
-            f"{exc}。请把 Hugging Face t8star/Auk-Comfy 中的目录放到 ComfyUI/models/auk，"
-            f"或在节点目录运行 python download_models.py --variant {download_variant}。"
+            f"{exc}. Place the folders from Hugging Face t8star/Auk-Comfy in ComfyUI/models/auk, "
+            f"or run python download_models.py --variant {download_variant} in the node directory."
         ) from exc
     checkpoint = model_path / checkpoint_name
     config = model_path / "config.yaml"
@@ -125,13 +127,13 @@ def resolve_device(setting: str) -> torch.device:
     else:
         device = torch.device(setting)
     if device.type not in {"cuda", "cpu"}:
-        raise ValueError(f"AuK 当前只支持 CUDA 或 CPU，ComfyUI 当前设备是 {device}")
+        raise ValueError(f"AuK supports CUDA or CPU; ComfyUI selected {device}")
     if device.type == "cuda":
         if not torch.cuda.is_available():
-            raise ValueError("选择了 CUDA，但当前 PyTorch 无法使用 CUDA")
+            raise ValueError("CUDA was selected, but CUDA is unavailable in this PyTorch installation")
         index = torch.cuda.current_device() if device.index is None else device.index
         if index >= torch.cuda.device_count():
-            raise ValueError(f"CUDA 设备不存在：cuda:{index}")
+            raise ValueError(f"CUDA device does not exist: cuda:{index}")
         return torch.device("cuda", index)
     return torch.device("cpu")
 
@@ -146,11 +148,11 @@ def resolve_dtype(setting: str, device: torch.device) -> str:
             return "fp32"
         return "bf16" if supports_bf16 else "fp16"
     if setting not in {"bf16", "fp16", "fp32"}:
-        raise ValueError(f"不支持的数据类型：{setting}")
+        raise ValueError(f"Unsupported data type: {setting}")
     if device.type == "cpu" and setting != "fp32":
-        raise ValueError("CPU 推理必须使用 fp32")
+        raise ValueError("CPU inference requires fp32")
     if device.type == "cuda" and setting == "bf16" and not supports_bf16:
-        raise ValueError("当前 CUDA 设备不支持 bf16，请选择 fp16")
+        raise ValueError("This CUDA device does not support bf16; select fp16")
     return setting
 
 
@@ -158,21 +160,21 @@ def normalize_audio(audio: dict[str, Any] | None) -> tuple[torch.Tensor, int] | 
     if audio is None:
         return None
     if not isinstance(audio, dict) or "waveform" not in audio or "sample_rate" not in audio:
-        raise ValueError("input_audio 必须是 ComfyUI AUDIO")
+        raise ValueError("input_audio must be ComfyUI AUDIO")
     waveform = audio["waveform"]
     sample_rate = audio["sample_rate"]
     if not torch.is_tensor(waveform) or waveform.ndim != 3:
         shape = tuple(waveform.shape) if torch.is_tensor(waveform) else type(waveform).__name__
-        raise ValueError(f"input_audio waveform 必须是 [B, C, T]，当前为 {shape}")
+        raise ValueError(f"input_audio waveform must have shape [B, C, T]; got {shape}")
     if waveform.shape[0] != 1:
-        raise ValueError(f"AuK 每次只接受一段音频，当前 batch={waveform.shape[0]}")
+        raise ValueError(f"AuK accepts one audio clip at a time; got batch={waveform.shape[0]}")
     if waveform.shape[1] < 1 or waveform.shape[2] < 1:
-        raise ValueError("输入音频为空")
+        raise ValueError("Input audio is empty")
     if isinstance(sample_rate, bool) or not isinstance(sample_rate, int) or sample_rate <= 0:
-        raise ValueError(f"输入采样率无效：{sample_rate!r}")
+        raise ValueError(f"Invalid input sample rate: {sample_rate!r}")
     waveform = waveform[0].detach().to(device="cpu", dtype=torch.float32)
     if not torch.isfinite(waveform).all():
-        raise ValueError("输入音频包含 NaN 或 Inf")
+        raise ValueError("Input audio contains NaN or Inf")
     if waveform.shape[0] > 1:
         waveform = waveform.mean(dim=0, keepdim=True)
     return waveform.contiguous(), sample_rate
@@ -192,14 +194,14 @@ def resolve_generation_seconds(
     """Resolve the output duration while preserving source length for fixed-length edits."""
     if duration_strategy == "source":
         if audio is None:
-            raise ValueError("等长任务需要输入音频")
+            raise ValueError("Source-aligned tasks require input audio")
         if duration_base_seconds is not None:
             target_frames = math.ceil(duration_base_seconds * engine.target_sample_rate / engine.downsample_rate)
             return latent_frames_to_seconds(engine, target_frames)
         return source_aligned_seconds(engine, audio)
     if duration_strategy == "speed":
         if audio is None:
-            raise ValueError("速度编辑需要输入音频")
+            raise ValueError("Speed editing requires input audio")
         if duration_base_seconds is None:
             target_frames = math.ceil(source_latent_frames(engine, audio) / parse_speed_multiplier(primary))
         else:
@@ -209,7 +211,7 @@ def resolve_generation_seconds(
         return latent_frames_to_seconds(engine, target_frames)
     if duration_strategy == "emotion":
         if audio is None:
-            raise ValueError("情绪编辑需要输入音频")
+            raise ValueError("Emotion editing requires input audio")
         if duration_base_seconds is None:
             target_frames = math.ceil(source_latent_frames(engine, audio) * emotion_duration_multiplier(primary))
         else:
@@ -222,18 +224,19 @@ def resolve_generation_seconds(
         return latent_frames_to_seconds(engine, target_frames)
     if duration_strategy == "content":
         if audio is None or task_key is None:
-            raise ValueError("文字/歌词编辑需要输入音频")
+            raise ValueError("Speech text/lyric editing requires input audio")
         source_seconds = duration_base_seconds if duration_base_seconds is not None else source_aligned_seconds(engine, audio)
         target = content_scaled_seconds(task_key, primary, source_seconds, str(secondary or "").strip())
         target_frames = math.ceil(target * engine.target_sample_rate / engine.downsample_rate)
         return latent_frames_to_seconds(engine, target_frames)
     if duration_strategy == "nonverbal":
         if audio is None:
-            raise ValueError("非语言声音编辑需要输入音频")
+            raise ValueError("Nonverbal sound editing requires input audio")
         source_seconds = duration_base_seconds if duration_base_seconds is not None else source_aligned_seconds(engine, audio)
         target = max(0.1, source_seconds + nonverbal_duration_delta(primary))
         target_frames = math.ceil(target * engine.target_sample_rate / engine.downsample_rate)
         return latent_frames_to_seconds(engine, target_frames)
+    duration_mode = normalize_duration_mode(duration_mode)
     if task_key in TTS_TASK_KEYS and duration_mode in {AUTO_DURATION_MODE, AUTO_TASK_DURATION_MODE}:
         if task_key == "zero_shot_tts":
             return estimate_zero_shot_tts_seconds(primary, max_seconds=MAX_SEQUENCE_SECONDS)
@@ -247,21 +250,21 @@ class AuKModelLoader(io.ComfyNode):
         devices = ["auto"] + [f"cuda:{index}" for index in range(torch.cuda.device_count())] + ["cpu"]
         return io.Schema(
             node_id="AuKModelLoader",
-            display_name="AuK 模型加载器",
+            display_name="AuK Model Loader",
             category="AuK · T8star-Aix",
-            description="直接在 ComfyUI 内加载 AuK，不需要启动 7860 服务。模型由 ComfyUI 分阶段管理显存。",
+            description="Loads AuK inside ComfyUI. ComfyUI manages staged model loading and GPU memory.",
             inputs=[
-                io.Combo.Input("model_variant", display_name="模型", options=list(MODEL_VARIANTS), default="AuK Base"),
-                io.Combo.Input("device", display_name="设备", options=devices, default="auto", advanced=True),
+                io.Combo.Input("model_variant", display_name="Model", options=list(MODEL_VARIANTS), default="AuK Base"),
+                io.Combo.Input("device", display_name="Device", options=devices, default="auto", advanced=True),
                 io.Combo.Input(
                     "dtype",
-                    display_name="精度",
+                    display_name="Precision",
                     options=["auto", "bf16", "fp16", "fp32"],
                     default="auto",
                     advanced=True,
                 ),
             ],
-            outputs=[AUK_ENGINE.Output("engine", display_name="AuK 模型")],
+            outputs=[AUK_ENGINE.Output("engine", display_name="AuK Model")],
         )
 
     @classmethod
@@ -270,7 +273,7 @@ class AuKModelLoader(io.ComfyNode):
         model_config = OmegaConf.load(config)
         expected_name = MODEL_VARIANTS[model_variant][0]
         if str(model_config.model.get("name", "")) != expected_name:
-            raise ValueError(f"配置文件模型类型错误：{config}")
+            raise ValueError(f"Incorrect model type in configuration: {config}")
         resolved_device = resolve_device(device)
         resolved_dtype = resolve_dtype(dtype, resolved_device)
         logger.info("Loading %s on %s (%s)", model_variant, resolved_device, resolved_dtype)
@@ -285,7 +288,7 @@ class AuKModelLoader(io.ComfyNode):
             engine = AuKEngine(checkpoint, config, qwen, resolved_device, resolved_dtype, load_progress)
         except ModuleNotFoundError as exc:
             raise RuntimeError(
-                f"缺少 AuK 运行依赖 {exc.name!r}；请用 ComfyUI 的 Python 执行 pip install -r requirements.txt"
+                f"Missing AuK dependency {exc.name!r}; use ComfyUI's Python to run pip install -r requirements.txt"
             ) from exc
         engine.model_variant = model_variant
         manifest = load_manifest()["models"]
@@ -299,27 +302,27 @@ class AuKGenerateEdit(io.ComfyNode):
     def define_schema(cls) -> io.Schema:
         return io.Schema(
             node_id="AuKGenerateEdit",
-            display_name="AuK 生成 / 编辑",
+            display_name="AuK Generate / Edit",
             category="AuK · T8star-Aix",
-            description="在 ComfyUI 进程内执行 AuK 全部官方任务；编辑任务会按官方规则自动计算输出时长。",
+            description="Runs all official AuK tasks inside ComfyUI; editing duration is calculated using the official task rules.",
             inputs=[
-                AUK_ENGINE.Input("engine", display_name="AuK 模型"),
-                io.Combo.Input("task", display_name="任务", options=[task.label for task in TASKS], default=TASKS[0].label),
+                AUK_ENGINE.Input("engine", display_name="AuK Model"),
+                io.Combo.Input("task", display_name="Task", options=list(TASK_BY_LABEL), default=TASKS[0].label),
                 io.String.Input(
                     "primary",
-                    display_name="主要内容（变速填倍率；音高/音量填带符号数值）",
+                    display_name="Primary content (speed: multiplier; pitch/volume: signed value)",
                     multiline=True,
                     default="",
                 ),
                 io.String.Input(
                     "secondary",
-                    display_name="声音描述 / 完整原文（仅文字或歌词估时）",
+                    display_name="Voice description / full transcript (text or lyric duration only)",
                     multiline=True,
                     default="",
                 ),
                 io.Float.Input(
                     "generation_seconds",
-                    display_name="目标时长（秒；编辑任务可自动）",
+                    display_name="Target duration (seconds; automatic for editing)",
                     default=3.0,
                     min=0.2,
                     max=MAX_SEQUENCE_SECONDS,
@@ -333,11 +336,11 @@ class AuKGenerateEdit(io.ComfyNode):
                     max=0x7FFFFFFFFFFFFFFF,
                     control_after_generate=io.ControlAfterGenerate.randomize,
                 ),
-                io.Audio.Input("input_audio", display_name="输入 / 参考音频", optional=True),
-                io.Int.Input("nfe_steps", display_name="NFE 步数", default=32, min=4, max=64, advanced=True),
+                io.Audio.Input("input_audio", display_name="Input / reference audio", optional=True),
+                io.Int.Input("nfe_steps", display_name="NFE steps", default=32, min=4, max=64, advanced=True),
                 io.Float.Input(
                     "cfg_strength",
-                    display_name="CFG 强度",
+                    display_name="CFG strength",
                     default=2.0,
                     min=0.0,
                     max=5.0,
@@ -346,7 +349,7 @@ class AuKGenerateEdit(io.ComfyNode):
                 ),
                 io.Float.Input(
                     "sway_sampling_coef",
-                    display_name="Sway 系数",
+                    display_name="Sway coefficient",
                     default=-1.0,
                     min=-1.0,
                     max=1.0,
@@ -355,17 +358,17 @@ class AuKGenerateEdit(io.ComfyNode):
                 ),
                 io.Combo.Input(
                     "duration_mode",
-                    display_name="时长适配模式",
-                    options=[AUTO_TASK_DURATION_MODE, AUTO_DURATION_MODE, MANUAL_DURATION_MODE],
+                    display_name="Duration adaptation mode",
+                    options=DURATION_MODE_OPTIONS,
                     default=AUTO_TASK_DURATION_MODE,
-                    tooltip="默认自动适配：TTS 按目标文本估时；编辑按任务规则计算，忽略目标时长和连接的 Float。手动指定仅用于 TTS，速度等编辑仍自动计算。",
+                    tooltip="Automatic: estimates TTS duration from text; editing follows task rules and ignores target duration and connected Float. Manual duration applies only to TTS.",
                 ),
             ],
             outputs=[
-                io.Audio.Output("generated_audio", display_name="生成音频"),
-                io.String.Output("instruction", display_name="最终指令"),
-                io.String.Output("metadata", display_name="运行参数 JSON"),
-                io.Float.Output("applied_seconds", display_name="实际目标时长（秒）"),
+                io.Audio.Output("generated_audio", display_name="Generated audio"),
+                io.String.Output("instruction", display_name="Final instruction"),
+                io.String.Output("metadata", display_name="Run metadata JSON"),
+                io.Float.Output("applied_seconds", display_name="Resolved target duration (seconds)"),
             ],
         )
 
@@ -385,21 +388,22 @@ class AuKGenerateEdit(io.ComfyNode):
         duration_mode: str = AUTO_TASK_DURATION_MODE,
     ) -> io.NodeOutput:
         if task not in TASK_BY_LABEL:
-            raise ValueError(f"未知任务：{task}")
+            raise ValueError(f"Unknown task: {task}")
+        duration_mode = normalize_duration_mode(duration_mode)
         if duration_mode not in {AUTO_TASK_DURATION_MODE, AUTO_DURATION_MODE, MANUAL_DURATION_MODE}:
-            raise ValueError(f"未知时长模式：{duration_mode}")
+            raise ValueError(f"Unknown duration mode: {duration_mode}")
         if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed <= 0x7FFFFFFFFFFFFFFF:
-            raise ValueError("Seed 必须是 0 到 9223372036854775807 之间的整数")
+            raise ValueError("Seed must be an integer from 0 to 9223372036854775807")
         if isinstance(nfe_steps, bool) or not isinstance(nfe_steps, int) or not 4 <= nfe_steps <= 64:
-            raise ValueError("NFE 步数必须是 4–64 之间的整数")
+            raise ValueError("NFE steps must be an integer from 4 to 64")
         if not math.isfinite(float(cfg_strength)) or not 0 <= float(cfg_strength) <= 5:
-            raise ValueError("CFG 强度必须是 0–5 之间的有限数值")
+            raise ValueError("CFG strength must be a finite number from 0 to 5")
         if not math.isfinite(float(sway_sampling_coef)) or not -1 <= float(sway_sampling_coef) <= 1:
-            raise ValueError("Sway 系数必须是 -1–1 之间的有限数值")
+            raise ValueError("Sway coefficient must be a finite number from -1 to 1")
         template = TASK_BY_LABEL[task]
         audio = normalize_audio(None if not template.needs_audio else input_audio)
         if template.needs_audio and audio is None:
-            raise ValueError(f"“{task}”需要连接输入或参考音频")
+            raise ValueError(f"{task} requires connected input or reference audio")
         preprocessing = None
         duration_base_seconds = None
         original_input_seconds = 0.0
@@ -518,18 +522,18 @@ class AuKAudioTrim(io.ComfyNode):
     def define_schema(cls) -> io.Schema:
         return io.Schema(
             node_id="AuKAudioTrim",
-            display_name="AuK 音频裁剪 / 时长",
+            display_name="AuK Audio Trim / Duration",
             category="AuK · T8star-Aix",
-            description="按秒截取标准 AUDIO，保留声道和采样率；可重复从同一 Load Audio 截取不同片段，不修改原音频。裁剪后的音频连接 AuK 生成 / 编辑。",
+            description="Trims standard AUDIO in seconds, preserving channels and sample rate. Connect the trimmed audio to AuK Generate / Edit. The source audio is unchanged.",
             inputs=[
-                io.Audio.Input("audio", display_name="原始音频"),
-                io.Float.Input("start_seconds", display_name="开始（秒）", default=0.0, min=0.0, step=0.01),
-                io.Float.Input("end_seconds", display_name="结束（秒；0 到结尾）", default=0.0, min=0.0, step=0.01),
+                io.Audio.Input("audio", display_name="Source audio"),
+                io.Float.Input("start_seconds", display_name="Start (seconds)", default=0.0, min=0.0, step=0.01),
+                io.Float.Input("end_seconds", display_name="End (seconds; 0 = end)", default=0.0, min=0.0, step=0.01),
             ],
             outputs=[
-                io.Audio.Output("trimmed_audio", display_name="裁剪音频"),
-                io.Float.Output("duration_seconds", display_name="裁剪时长（秒）"),
-                io.String.Output("info", display_name="裁剪说明"),
+                io.Audio.Output("trimmed_audio", display_name="Trimmed audio"),
+                io.Float.Output("duration_seconds", display_name="Trimmed duration (seconds)"),
+                io.String.Output("info", display_name="Trim details"),
             ],
         )
 
@@ -538,24 +542,24 @@ class AuKAudioTrim(io.ComfyNode):
         # Reuse validation without returning its mono conversion: trimming must
         # preserve the original channels for PreviewAudio and other nodes.
         if normalize_audio(audio) is None:
-            raise ValueError("裁剪节点需要连接原始音频")
+            raise ValueError("The trim node requires connected source audio")
         sample_rate = audio["sample_rate"]
         waveform = audio["waveform"]
         start, end = float(start_seconds), float(end_seconds)
         if not math.isfinite(start) or not math.isfinite(end) or start < 0 or end < 0:
-            raise ValueError("裁剪开始和结束必须是非负有限秒数")
+            raise ValueError("Trim start and end must be finite, nonnegative seconds")
         total = waveform.shape[-1]
         if start >= total / sample_rate:
-            raise ValueError(f"裁剪开始超出原音频 {total / sample_rate:.3f}s")
+            raise ValueError(f"Trim start exceeds source duration {total / sample_rate:.3f}s")
         first = round(start * sample_rate)
         last = total if end == 0 else min(total, round(min(end, total / sample_rate) * sample_rate))
         if first >= total or last <= first:
-            raise ValueError(f"裁剪范围无效：原音频 {total / sample_rate:.3f}s；结束必须大于开始，且开始不能超出音频")
+            raise ValueError(f"Invalid trim range: source duration {total / sample_rate:.3f}s; end must exceed start and start must be within the audio")
         cropped = waveform[..., first:last].detach().to(device="cpu", dtype=torch.float32).clone().contiguous()
         seconds = cropped.shape[-1] / sample_rate
         note = (
-            f"原音频 {total / sample_rate:.3f}s → 截取 {first / sample_rate:.3f}–{last / sample_rate:.3f}s → "
-            f"实际输入 {seconds:.3f}s；{sample_rate} Hz，{cropped.shape[1]} 声道"
+            f"Source {total / sample_rate:.3f}s → trim {first / sample_rate:.3f}–{last / sample_rate:.3f}s → "
+            f"Actual input {seconds:.3f}s; {sample_rate} Hz, {cropped.shape[1]} channels"
         )
         return io.NodeOutput({"waveform": cropped, "sample_rate": sample_rate}, seconds, note)
 

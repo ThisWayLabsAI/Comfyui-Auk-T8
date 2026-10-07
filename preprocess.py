@@ -151,7 +151,7 @@ def prepare_model_audio(waveform, sample_rate: int, task_key: str, primary: str)
     trim_bounds = None
     vad_engine = "skipped"
     whisper_to_normal = task_key == "whisper" and any(
-        word in str(primary or "") for word in ("正常", "别耳语", "非耳语")
+        word in str(primary or "").casefold() for word in ("正常", "别耳语", "非耳语", "normal", "unwhisper")
     )
     if task_key not in VAD_SKIP_TASKS and not whisper_to_normal:
         speech_bounds = _silero_speech_bounds(prepared, sample_rate)
@@ -227,9 +227,9 @@ def protect_audio_output(waveform):
     import torch
 
     if not torch.is_tensor(waveform) or waveform.ndim != 2 or min(waveform.shape) < 1:
-        raise ValueError("模型输出必须是非空 [C, T] 音频")
+        raise ValueError("Model output must be nonempty [C, T] audio")
     if not torch.isfinite(waveform).all():
-        raise ValueError("模型输出包含 NaN 或 Inf；请更换 Seed 后重试")
+        raise ValueError("Model output contains NaN or Inf; try a different seed")
     peak = float(waveform.abs().max())
     gain = 0.99 / peak if peak > 1.0 else 1.0
     return waveform * gain if gain != 1.0 else waveform, {

@@ -19,7 +19,7 @@
       "inputs": [],
       "outputs": [
         {
-          "name": "AuK 模型",
+          "name": "AuK Model",
           "type": "AUK_ENGINE",
           "links": [
             1
@@ -108,7 +108,7 @@
       ],
       "outputs": [
         {
-          "name": "生成音频",
+          "name": "Generated audio",
           "type": "AUDIO",
           "links": [
             3,
@@ -117,19 +117,19 @@
           "slot_index": 0
         },
         {
-          "name": "最终指令",
+          "name": "Final instruction",
           "type": "STRING",
           "links": null,
           "slot_index": 1
         },
         {
-          "name": "运行参数 JSON",
+          "name": "Run metadata JSON",
           "type": "STRING",
           "links": null,
           "slot_index": 2
         },
         {
-          "name": "实际目标时长（秒）",
+          "name": "Resolved target duration (seconds)",
           "type": "FLOAT",
           "links": null,
           "slot_index": 3
@@ -141,16 +141,16 @@
         "ver": "2.0.8"
       },
       "widgets_values": [
-        "歌词编辑",
-        "把歌词“明天你好”改成“未来你好”",
-        "明天你好，声音多渺小。",
+        "Lyric editing",
+        "Change 'hello tomorrow' to 'hello future' in the vocal recording.",
+        "Hello tomorrow, how small our voices are.",
         3.0,
         42,
         "randomize",
         32,
         2.0,
         -1.0,
-        "自动适配（按任务规则）"
+        "Automatic adaptation (task rules)"
       ]
     },
     {
@@ -222,7 +222,7 @@
         "Node name for S&R": "SaveAudio"
       },
       "widgets_values": [
-        "auk/歌词编辑"
+        "auk/Lyric-Editing"
       ]
     },
     {
@@ -248,7 +248,7 @@
       ],
       "outputs": [
         {
-          "name": "裁剪音频",
+          "name": "Trimmed audio",
           "type": "AUDIO",
           "links": [
             5
@@ -256,13 +256,13 @@
           "slot_index": 0
         },
         {
-          "name": "裁剪时长（秒）",
+          "name": "Trimmed duration (seconds)",
           "type": "FLOAT",
           "links": null,
           "slot_index": 1
         },
         {
-          "name": "裁剪说明",
+          "name": "Trim details",
           "type": "STRING",
           "links": null,
           "slot_index": 2

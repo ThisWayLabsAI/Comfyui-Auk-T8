@@ -201,7 +201,7 @@ class AuKEngine:
             end = int(total_lens[0].item())
             latent = generated[0, start:end, :].unsqueeze(0)
             if latent.shape[1] == 0 or not torch.isfinite(latent).all():
-                raise RuntimeError("AuK 生成的潜变量为空或包含 NaN/Inf")
+                raise RuntimeError("AuK generated empty latents or NaN/Inf")
             return latent.cpu()
         finally:
             self.inference.model.transformer.clear_cache()
@@ -221,7 +221,7 @@ class AuKEngine:
             waveform = waveform.squeeze(0)
         waveform = waveform.to(torch.float32)
         if waveform.ndim != 2 or waveform.shape[-1] == 0 or not torch.isfinite(waveform).all():
-            raise RuntimeError("AuK 输出音频为空或包含 NaN/Inf")
+            raise RuntimeError("AuK output audio is empty or contains NaN/Inf")
         return waveform
 
     def generate(
@@ -325,15 +325,15 @@ def validate_sequence_duration(
     source_frames = source_latent_frames(engine, audio)
     if audio is not None and source_frames < 1:
         minimum_seconds = engine.downsample_rate / engine.target_sample_rate
-        raise ValueError(f"输入音频过短，至少需要 {minimum_seconds:.3f}s")
+        raise ValueError(f"Input audio is too short; at least {minimum_seconds:.3f}s is required")
     if not math.isfinite(target_seconds) or target_seconds <= 0:
-        raise ValueError("生成时长必须是大于 0 的有限数值")
+        raise ValueError("Generation duration must be finite and greater than zero")
     max_frames = int(MAX_SEQUENCE_SECONDS * engine.target_sample_rate / engine.downsample_rate)
     checked_seconds = source_seconds if input_seconds is None else input_seconds
     if not math.isfinite(checked_seconds) or checked_seconds < 0:
-        raise ValueError("输入时长必须是非负有限数值")
+        raise ValueError("Input duration must be finite and nonnegative")
     if checked_seconds > MAX_SEQUENCE_SECONDS:
-        raise ValueError(f"输入音频 {checked_seconds:.6f}s 超过 AuK 的 {MAX_SEQUENCE_SECONDS:.0f}s 限制；请先用音频裁剪节点截取")
+        raise ValueError(f"Input audio {checked_seconds:.6f}s exceeds AuK's {MAX_SEQUENCE_SECONDS:.0f}s limit; trim it with the audio trim node first")
     target_frames = max(1, math.ceil(target_seconds * engine.target_sample_rate / engine.downsample_rate))
     if target_frames > max_frames:
-        raise ValueError(f"生成时长 {target_seconds:.2f}s 超过 AuK 的 {MAX_SEQUENCE_SECONDS:.0f}s 限制")
+        raise ValueError(f"Generation duration {target_seconds:.2f}s exceeds AuK's {MAX_SEQUENCE_SECONDS:.0f}s limit")

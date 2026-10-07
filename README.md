@@ -4,9 +4,11 @@
 
 Run AuK speech generation and editing directly inside ComfyUI
 
-[中文说明](README_CN.md) · [Model repository](https://huggingface.co/t8star/Auk-Comfy) · [Complete Windows package / overseas](https://huggingface.co/t8star/Auk-Comfy/resolve/main/AuK-Local.rar?download=true)
+[Original Chinese documentation](README_CN.md) · [Model repository](https://huggingface.co/t8star/Auk-Comfy) · [Complete Windows package / overseas](https://huggingface.co/t8star/Auk-Comfy/resolve/main/AuK-Local.rar?download=true)
 
 </div>
+
+This fork's `english-localization` branch provides English node labels, task guides, errors, and 17 English-named example workflows. Existing upstream task and duration values remain accepted. See [localization maintenance](docs/LOCALIZATION.md) for upstream sync instructions and the filename map. The original Chinese documentation and historical audit notes are retained for reference.
 
 This is a standalone ComfyUI V3 custom-node package. It loads AuK, AuK-Flash, and Qwen2.5-Omni-3B directly in the ComfyUI process. It does not require AuK Local, a server at `127.0.0.1:7860`, or a service token.
 
@@ -15,7 +17,7 @@ This repository publishes only the **standalone ComfyUI node package**. There is
 ## Nodes
 
 - **AuK Model Loader** defaults to the higher-quality AuK Base and can switch to the speed-oriented AuK-Flash. ComfyUI manages staged loading and offloading of the VAE, Qwen encoder, and DiT.
-- **AuK Generate / Edit** exposes 17 Chinese task entries that cover all 16 upstream low-level tasks. Target-speaker extraction is a content-based entry for speaker separation. The node returns standard ComfyUI `AUDIO`, the final instruction, run metadata JSON, and the resolved target duration.
+- **AuK Generate / Edit** exposes 17 English task entries that cover all 16 upstream low-level tasks. Target-speaker extraction is a content-based entry for speaker separation. The node returns standard ComfyUI `AUDIO`, the final instruction, run metadata JSON, and the resolved target duration.
 - **AuK Audio Trim / Duration** cuts by start/end seconds while preserving sample rate and channels. It returns cropped `AUDIO`, its exact `FLOAT` duration, and a trim description. An end of `0` means the end of the source.
 
 Tasks include instruction TTS, zero-shot voice cloning, speech and lyric editing, pitch/speed/volume/emotion/timbre editing, de-accenting, nonverbal editing, whisper conversion, enhancement, quality repair, speaker separation, vocal extraction, and target-speaker extraction.
@@ -24,13 +26,13 @@ Tasks include instruction TTS, zero-shot voice cloning, speech and lyric editing
 
 ### ComfyUI Manager
 
-Search for **AuK · T8star-Aix** in ComfyUI Manager, install it, and restart ComfyUI. Confirm that Manager offers version 2.0.8 or later; if Registry processing still shows an older release, use the Git installation until the new version becomes active.
+For this English fork, use the Git installation below. The upstream package can be found as **AuK · T8star-Aix** in ComfyUI Manager; installing that package gives you upstream's interface. After updates, confirm that this checkout is still on `english-localization`.
 
 ### Git
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/T8mars/Comfyui-Auk-T8
+git clone --branch english-localization https://github.com/ThisWayLabsAI/Comfyui-Auk-T8.git
 cd Comfyui-Auk-T8
 python -m pip install -r requirements.txt
 ```
@@ -73,12 +75,12 @@ Flash plus Qwen requires about 18.7 GB. Both AuK variants plus Qwen require abou
 
 ## Run
 
-1. Drag the JSON for the required task from `example_workflows` into ComfyUI. The folder contains an executable workflow for every one of the 17 entries.
+1. Drag the JSON for the required task from `example_workflows` into ComfyUI. The folder contains an executable workflow for every one of the 17 entries, starting with `AuK-01-Instruction-TTS.json`. Connect your own `auk_input.wav` for source/reference tasks. For speech/lyric edits and target-speaker extraction, replace the sample words with the exact words in your audio.
 2. **AuK Model Loader** defaults to AuK Base. Prefer Base for emotion, accent, timbre, nonverbal, whisper, and repair tasks; Flash is intended for fast previews.
 3. Select a task in **AuK Generate / Edit**. The node displays its official input requirement, field meanings, example, and warning. For source/reference tasks, connect `Load Audio → AuK Audio Trim / Duration → AuK Generate / Edit`. Trim long originals before generation. Set both crop values to `0` to pass the full source.
 4. Queue the workflow. AuK-Flash always uses NFE=4 and CFG=0; Base uses the advanced sampling controls.
 
-**Automatic duration adaptation:** click **↻ 自动适配时长** in the node guide, or select **自动适配（按任务规则）** in the visible duration mode widget (the default). Editing uses the actual cropped input and task rules, ignoring a stale target value or a connected Float. No separate Float node is needed. Instruction TTS and voice cloning estimate duration from text. This estimates the spoken length from the target text and prevents a short sentence from continuing into AuK's internal no-reference marker when a much longer duration is requested. Select **手动指定** for exact TTS timing; editing rules remain automatic. The previous automatic TTS option is kept for existing workflows. Text estimates over 30 seconds now report an error requesting shorter text or separate segments instead of silently truncating. The Seed widget uses ComfyUI's standard **randomize after generation** mode by default; switch its control mode to fixed to reproduce a result. The metadata output records the actual seed, requested duration, resolved duration, and duration mode.
+**Automatic duration adaptation:** click **↻ Adapt duration automatically** in the node guide, or select **Automatic adaptation (task rules)** in the visible duration mode widget (the default). Editing uses the actual cropped input and task rules, ignoring a stale target value or a connected Float. No separate Float node is needed. Instruction TTS and voice cloning estimate duration from text. This estimates the spoken length from the target text and prevents a short sentence from continuing into AuK's internal no-reference marker when a much longer duration is requested. Select **Manual duration** for exact TTS timing; editing rules remain automatic. The previous automatic TTS option is kept for existing workflows. Text estimates over 30 seconds now report an error requesting shorter text or separate segments instead of silently truncating. The Seed widget uses ComfyUI's standard **randomize after generation** mode by default; switch its control mode to fixed to reproduce a result. The metadata output records the actual seed, requested duration, resolved duration, and duration mode.
 
 Pitch, volume, timbre, de-accent, and whisper match the effective speech duration measured by official VAD. Enhancement, quality repair, and separation preserve the full input length. Speed uses `effective speech duration / multiplier`. Emotion uses the official factors: 1.22× for sad, 1.16× for fearful, and 1.06× for the other supported emotions. Speech and lyric edits estimate the result from the text added or removed. Nonverbal edits add or remove the official event duration. These automatic rules ignore a stale target-duration widget, so a 48-second source trimmed to four seconds is validated as the actual four-second node input.
 

@@ -4,9 +4,22 @@ import math
 import re
 
 TTS_TASK_KEYS = frozenset({"instruct_tts", "zero_shot_tts"})
-AUTO_DURATION_MODE = "自动估算（TTS 推荐）"
-AUTO_TASK_DURATION_MODE = "自动适配（按任务规则）"
-MANUAL_DURATION_MODE = "手动指定"
+AUTO_DURATION_MODE = "Automatic estimate (TTS)"
+AUTO_TASK_DURATION_MODE = "Automatic adaptation (task rules)"
+MANUAL_DURATION_MODE = "Manual duration"
+
+# Accept values serialized by upstream workflows and API clients.
+DURATION_MODE_ALIASES = {
+    "自动估算（TTS 推荐）": AUTO_DURATION_MODE,
+    "自动适配（按任务规则）": AUTO_TASK_DURATION_MODE,
+    "手动指定": MANUAL_DURATION_MODE,
+}
+DURATION_MODE_OPTIONS = [AUTO_TASK_DURATION_MODE, AUTO_DURATION_MODE, MANUAL_DURATION_MODE, *DURATION_MODE_ALIASES]
+
+
+def normalize_duration_mode(value: str) -> str:
+    return DURATION_MODE_ALIASES.get(value, value)
+
 
 _CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 _SECONDS_PER_UTF8_BYTE = {"en": 0.0656, "zh": 0.0803}
@@ -25,7 +38,7 @@ def _estimate_f5_seconds(
 ) -> float:
     value = str(text or "").strip()
     if not value:
-        raise ValueError("自动估算时长需要填写目标文本")
+        raise ValueError("Automatic duration estimation requires target text")
 
     fallback = "zh" if _CJK_RE.search(value) else "en"
     languages = ["zh" if _CJK_RE.fullmatch(char) else ("en" if char.isascii() and char.isalpha() else None) for char in value]
@@ -52,7 +65,7 @@ def _estimate_f5_seconds(
     seconds = frames * _HOP_LENGTH / _SAMPLE_RATE
     result = max(short_text_minimum if is_short_text else 0.6, math.ceil(seconds * 10.0 - 1e-9) / 10.0)
     if result > float(max_seconds):
-        raise ValueError(f"目标文本预计需要 {result:.1f}s，超过 {max_seconds:.0f}s；请缩短文本或分段生成")
+        raise ValueError(f"Target text needs approximately {result:.1f}s, exceeding {max_seconds:.0f}s; shorten the text or generate separate segments")
     return result
 
 
