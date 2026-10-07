@@ -2,6 +2,8 @@
 
 Read [docs/LOCALIZATION.md](docs/LOCALIZATION.md) before translating files or syncing upstream.
 
+For session continuity, read [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md) when resuming this project or investigating its open audio-editing/separation issues. Treat it as a dated snapshot: check current Git/runtime state and the user's latest request before acting. Keep new findings there when they change the next-session context; do not treat proposed experiments as completed work or authorization to run them.
+
 ## Branch policy
 
 - `upstream`: https://github.com/T8mars/Comfyui-Auk-T8.git
