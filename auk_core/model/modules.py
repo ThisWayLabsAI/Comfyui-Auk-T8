@@ -217,9 +217,19 @@ class Attention(nn.Module):
 
 # Attention processor
 
+FLASH_ATTN_AVAILABLE = False
 if is_package_available("flash_attn"):
-    from flash_attn import flash_attn_func, flash_attn_varlen_func
-    from flash_attn.bert_padding import pad_input, unpad_input
+    try:
+        from flash_attn import flash_attn_func, flash_attn_varlen_func
+        from flash_attn.bert_padding import pad_input, unpad_input
+
+        FLASH_ATTN_AVAILABLE = all(callable(function) for function in (
+            flash_attn_func, flash_attn_varlen_func, pad_input, unpad_input,
+        ))
+    except (ImportError, OSError):
+        # Other custom nodes may register incomplete compatibility stubs.
+        # The default PyTorch backend does not need FlashAttention.
+        pass
 
 
 class AttnProcessor:
@@ -229,7 +239,8 @@ class AttnProcessor:
         attn_mask_enabled: bool = True,
     ):
         if attn_backend == "flash_attn":
-            assert is_package_available("flash_attn"), "Please install flash-attn first."
+            if not FLASH_ATTN_AVAILABLE:
+                raise RuntimeError("FlashAttention is unavailable or incomplete; use the torch attention backend.")
 
         self.attn_backend = attn_backend
         self.attn_mask_enabled = attn_mask_enabled
@@ -324,7 +335,8 @@ class JointAttnProcessor:
         attn_mask_enabled: bool = True,
     ):
         if attn_backend == "flash_attn":
-            assert is_package_available("flash_attn"), "Please install flash-attn first."
+            if not FLASH_ATTN_AVAILABLE:
+                raise RuntimeError("FlashAttention is unavailable or incomplete; use the torch attention backend.")
 
         self.attn_backend = attn_backend
         self.attn_mask_enabled = attn_mask_enabled

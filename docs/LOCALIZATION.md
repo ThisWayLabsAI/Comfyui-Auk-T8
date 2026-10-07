@@ -124,7 +124,11 @@ All paths below are relative to `example_workflows/`. The generator and English 
 - `preprocess.py`: Chinese whisper-direction tokens remain supported alongside English equivalents.
 - `web/legacy_widget_values.json`: Chinese keys intentionally migrate serialized upstream values to English.
 - `README_CN.md`, `planning/`, and existing Chinese test inputs preserve original documentation, historical evidence, and multilingual compatibility coverage. The Chinese example in the English README's 2.0.8 release note illustrates a duration regression.
-- `auk_core/`: upstream model internals are preserved, including a Chinese developer TODO. Model/config/registry identifiers are unchanged.
+- `auk_core/`: model math and canonical prompts are preserved, including a Chinese developer TODO. A fork compatibility fix guards optional FlashAttention imports against incomplete placeholders registered by other custom nodes; the inference path continues to use PyTorch attention. Model/config/registry identifiers are unchanged.
+
+### Runtime compatibility fixes
+
+- October 7, 2026: `AuKModelLoader` reached model import after the missing variant `config.yaml` files were supplied. SeedVR2's compatibility module registers a `flash_attn` placeholder when FlashAttention is unavailable. AuK's package-presence check accepted that placeholder, then failed importing `flash_attn.bert_padding`, despite inference selecting the PyTorch backend. The optional import now tolerates incomplete/unloadable FlashAttention and rejects an explicit FlashAttention selection with a clear error. A subprocess regression test reproduces the placeholder, checks PyTorch attention execution, and imports the actual inference entrypoint without loading weights. Recheck this guard during upstream syncs.
 
 ### Sync record
 
