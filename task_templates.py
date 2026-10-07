@@ -184,6 +184,128 @@ TASK_GUIDES: dict[str, TaskGuide] = {
 }
 
 
+@dataclass(frozen=True)
+class TaskTuningGuide:
+    seed_focus: str
+    sampling_focus: str
+    duration_help: str
+
+
+MODEL_CONTROL_HELP = (
+    "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; "
+    "the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. "
+    "Task advice below describes listening checks, not benchmarked optimal settings."
+)
+
+CONTROL_HELP = {
+    "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments.",
+    "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4.",
+    "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0.",
+    "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+}
+
+TASK_TUNING_GUIDES = {
+    "instruct_tts": TaskTuningGuide(
+        "Compare pronunciation, pauses, voice character, and delivery.",
+        "Judge whether the words and requested voice style are clear without unnatural delivery.",
+        "Automatic estimates length from target text. Manual uses target seconds and can change pacing or cause awkward timing; it is not an exact speaking-rate control.",
+    ),
+    "zero_shot_tts": TaskTuningGuide(
+        "Compare pronunciation and resemblance to the reference speaker, keeping the reference fixed.",
+        "Listen for correct new words, speaker resemblance, and natural pacing; more CFG is not a voice-similarity slider.",
+        "Automatic estimates length from the NEW target text. Manual uses target seconds. Reference length is not the requested output length.",
+    ),
+    "content_edit": TaskTuningGuide(
+        "Compare complete replacement, unchanged words, and voice continuity. Partial edits such as Florida Angeles may vary by seed.",
+        "Listen for complete replacement, retained words, timing, and artifacts. Stronger CFG does not guarantee that the whole phrase is replaced; try a longer phrase with context first.",
+        "Always automatic from source speech and the edit. Box 2 accepts the full original CROPPED transcript for the length estimate only. Manual target seconds and connected Float are ignored. Check resolved duration.",
+    ),
+    "lyric_edit": TaskTuningGuide(
+        "Compare sung pronunciation, replacement completeness, melody, and voice continuity.",
+        "Listen for the requested lyrics without melody or voice damage; sampling changes cannot remove accompaniment from an unsuitable source.",
+        "Always automatic from source and lyric length changes. Box 2 is the original cropped lyrics for duration only; manual target seconds and connected Float are ignored.",
+    ),
+    "pitch": TaskTuningGuide(
+        "Compare pitch change while listening for unchanged words and voice artifacts.",
+        "The signed semitone value in box 1 sets the request; NFE/CFG are not pitch-amount controls.",
+        "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+    ),
+    "speed": TaskTuningGuide(
+        "Compare intelligibility, rhythm, and voice continuity at the same multiplier.",
+        "The multiplier in box 1 requests speed; NFE/CFG do not set speaking rate. Listen for intelligibility and artifacts.",
+        "Effective speech duration divided by the multiplier. Below 1 lengthens output; above 1 shortens it. Manual target seconds and connected Float are ignored; crop first if output would exceed 30 seconds.",
+    ),
+    "volume": TaskTuningGuide(
+        "Compare loudness, clarity, and clipping artifacts at the same dB request.",
+        "The dB value in box 1 sets the volume request; CFG is not a gain knob. Peak protection can reduce the final boost.",
+        "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+    ),
+    "emotion": TaskTuningGuide(
+        "Compare emotion, pronunciation, and speaker identity; seeds may produce different deliveries.",
+        "Listen for the target emotion without losing the words or voice. CFG is not a calibrated emotion-intensity control.",
+        "Automatic speech-duration factors: sad 1.22x, fearful 1.16x, other supported emotions 1.06x. Manual target seconds and connected Float are ignored; trim if resolved output exceeds 30 seconds.",
+    ),
+    "timbre": TaskTuningGuide(
+        "Compare voice character and intelligibility using the same description.",
+        "Listen for the requested voice character while retaining the words. CFG is not an exact timbre-matching control.",
+        "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+    ),
+    "deaccent": TaskTuningGuide(
+        "Compare accent change, retained words, and speaker identity on genuinely accented speech.",
+        "The task uses a fixed accent-removal action. Sampling cannot select an arbitrary target accent or language.",
+        "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+    ),
+    "nonverbal": TaskTuningGuide(
+        "Compare event placement, event sound, and preservation of nearby speech.",
+        "The event and quoted anchor in box 1 select the requested action; NFE/CFG do not set exact event timing or length.",
+        "Automatic source speech duration plus/minus an event-family allowance. Manual target seconds and connected Float are ignored; trim if the output would exceed 30 seconds.",
+    ),
+    "whisper": TaskTuningGuide(
+        "Compare word clarity and whisper/normal delivery; do not judge whisper quality by loudness alone.",
+        "Listen for correct conversion without missing words. CFG is not a volume control; quiet whisper output is intentional.",
+        "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+    ),
+    "enhance": TaskTuningGuide(
+        "Compare residual noise/reverb, missing speech, and voice coloration.",
+        "Judge cleanup against speech preservation. Higher CFG or NFE does not guarantee more denoising; compare one cleanup type first.",
+        "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+    ),
+    "quality": TaskTuningGuide(
+        "Compare clarity, repaired defects, and newly introduced artifacts against the source.",
+        "Judge repair without invented or lost speech detail. More steps cannot guarantee recovery of information missing from the source.",
+        "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+    ),
+    "speech_separate": TaskTuningGuide(
+        "Compare unwanted-speaker leakage and completeness of the selected speaker.",
+        "Listen for separation without deleting desired speech. Speaker order selects the target; CFG is not a speaker selector.",
+        "Preserves full cropped input length, including silence. Speaker order is relative to this crop. Manual target seconds and connected Float are ignored.",
+    ),
+    "music_separate": TaskTuningGuide(
+        "Compare accompaniment leakage, vocal completeness, and vocal distortion.",
+        "Listen for vocal preservation versus accompaniment removal. CFG is not a calibrated separation-strength control or named-singer selector.",
+        "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+    ),
+    "target_speaker": TaskTuningGuide(
+        "Compare target-speaker completeness and other-speaker leakage using the same identifying phrase.",
+        "The exact source phrase identifies the speaker. Sampling changes cannot correct a phrase identifying the wrong speaker.",
+        "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+    ),
+}
+
+
+def task_control_help(task_key: str) -> dict[str, str]:
+    """Presentation-only control help; does not change sampling or duration rules."""
+    tuning = TASK_TUNING_GUIDES[task_key]
+    return {
+        "seed": f"{CONTROL_HELP['seed']} {tuning.seed_focus}",
+        "nfe_steps": f"{CONTROL_HELP['nfe_steps']} {tuning.sampling_focus}",
+        "cfg_strength": f"{CONTROL_HELP['cfg_strength']} {tuning.sampling_focus}",
+        "sway_sampling_coef": CONTROL_HELP["sway_sampling_coef"],
+        "duration_mode": tuning.duration_help,
+        "generation_seconds": tuning.duration_help,
+    }
+
+
 def _clean_replacement_slot(value: str) -> str:
     # Users commonly write the quoted slot before the final sentence mark,
     # for example: Replace 'old' with 'new'.  Strip both classes together so

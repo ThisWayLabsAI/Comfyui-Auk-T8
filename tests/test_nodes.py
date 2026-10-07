@@ -46,6 +46,8 @@ def test_web_task_guide_covers_every_visible_task(plugin):
     root = Path(plugin.__file__).parent
     assert plugin.WEB_DIRECTORY == "./web"
     guide_data = json.loads((root / "web" / "task_guides.json").read_text(encoding="utf-8"))
+    templates = importlib.import_module(f"{plugin.__name__}.task_templates")
+    assert set(templates.TASK_TUNING_GUIDES) == {task.key for task in plugin.nodes.TASKS}
     assert set(guide_data) == {task.label for task in plugin.nodes.TASKS}
     for task in plugin.nodes.TASKS:
         entry = guide_data[task.label]
@@ -59,6 +61,12 @@ def test_web_task_guide_covers_every_visible_task(plugin):
         assert entry["primary_help"] == guide.primary_help
         assert entry["secondary_help"] == guide.secondary_help
         assert guide.primary_help and guide.secondary_help
+        assert entry["model_help"] == templates.MODEL_CONTROL_HELP
+        assert entry["control_help"] == templates.task_control_help(task.key)
+        assert set(entry["control_help"]) == {
+            "seed", "nfe_steps", "cfg_strength", "sway_sampling_coef", "duration_mode", "generation_seconds",
+        }
+        assert all(entry["control_help"].values())
     script = (root / "web" / "js" / "auk_task_controls.js").read_text(encoding="utf-8")
     assert "loadedGraphNode" in script
     assert "serialize: false" in script

@@ -127,6 +127,8 @@ def main() -> None:
             "requirement": guide.requirement,
             "example": guide.example,
             "note": guide.note,
+            "model_help": TASK_DATA["MODEL_CONTROL_HELP"],
+            "control_help": TASK_DATA["task_control_help"](task.key),
         }
     (ROOT / "web" / "task_guides.json").write_text(
         json.dumps(guides, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",

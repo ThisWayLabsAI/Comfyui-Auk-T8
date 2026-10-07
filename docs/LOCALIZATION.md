@@ -138,6 +138,14 @@ Per-task guidance now explains both numbered text boxes and inference tuning. `p
 
 Validation for this follow-up: 166 Python tests and 2 frontend Node tests passed, including generated-guide coverage and regeneration idempotence. An isolated live ComfyUI browser session confirmed task-specific placeholders, guide rendering, and label changes between speech editing and pitch editing without clearing entered text. The browser skill's visual check prompted separating the duration button from the guide heading. No audio inference was queued for this documentation/UI update; the user-reported successful generation above followed the dependency repair.
 
+### Sampling-control guidance follow-up
+
+Control definitions are shared across tasks; task-specific listening checks and duration rules now live in `TASK_TUNING_GUIDES`, with shared explanations in `CONTROL_HELP`. The generator exports `model_help` and `control_help` for all 17 tasks. The frontend updates seed/NFE/CFG/sway/duration tooltips and provides expandable control help before the task tips. The browser skill's visual check motivated that placement so the controls are easier to discover. Text, seeds, sampling values, node IDs, and inference behavior are unchanged.
+
+Documentation explicitly separates experiments from verified mechanisms: NFE is sampling effort, CFG is extra conditioning guidance (CFG 0 still conditions), sway redistributes noise-to-audio sampling times, and seed selects starting noise. Flash uses 4 steps, CFG 0, and a fixed time grid; its displayed sway is not adjustable sampling. Seed guidance covers exploration, fixed comparisons, actual-run metadata, and reproducibility limits. User-reported seed differences and improved transcript-assisted speech edits are observations, not benchmarks. Per-task help does not claim optimal numeric presets. Recheck these explanations against sampler/runtime/duration changes during upstream sync.
+
+Validation: 166 Python tests and 2 frontend Node tests passed, including generated help coverage, all legacy mappings, all task tooltips, preservation of text/sampling/seed values, and generator idempotence. An isolated live browser checked all 17 task variants, duration help, seed/text preservation, and expanded help rendering. No audio inference was queued for this presentation-only update.
+
 ### Sync record
 
 After each sync, record the integrated upstream commit, translation updates, checks performed, and unresolved limitations here. No subsequent upstream release has been merged yet.

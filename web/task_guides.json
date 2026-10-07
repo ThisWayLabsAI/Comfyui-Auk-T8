@@ -7,7 +7,16 @@
     "secondary_help": "Describe voice character, tone, accent, or delivery. This description is used in the TTS prompt.",
     "requirement": "No audio required. Enter the words to speak and a voice description.",
     "example": "Target text: Welcome back. | Voice description: A warm, clear young female voice.",
-    "note": "Use a short test sentence and a concise voice description. Automatic duration follows the target text. Base exposes sampling controls; Flash always uses 4 steps and CFG 0."
+    "note": "Use a short test sentence and a concise voice description. Automatic duration follows the target text. Base exposes sampling controls; Flash always uses 4 steps and CFG 0.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare pronunciation, pauses, voice character, and delivery.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Judge whether the words and requested voice style are clear without unnatural delivery.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Judge whether the words and requested voice style are clear without unnatural delivery.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Automatic estimates length from target text. Manual uses target seconds and can change pacing or cause awkward timing; it is not an exact speaking-rate control.",
+      "generation_seconds": "Automatic estimates length from target text. Manual uses target seconds and can change pacing or cause awkward timing; it is not an exact speaking-rate control."
+    }
   },
   "Voice cloning": {
     "key": "zero_shot_tts",
@@ -17,7 +26,16 @@
     "secondary_help": "Unused. Leave blank; a reference transcript or extra voice directions are not added to the cloning prompt.",
     "requirement": "Connect clear reference speech from one speaker. Enter only the new words to speak.",
     "example": "Target text: Hello, and welcome to today's program.",
-    "note": "Use clean, single-speaker reference speech. The reference supplies the voice; the first box supplies new words. Try different seeds for pronunciation variation, then fix the chosen seed."
+    "note": "Use clean, single-speaker reference speech. The reference supplies the voice; the first box supplies new words. Try different seeds for pronunciation variation, then fix the chosen seed.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare pronunciation and resemblance to the reference speaker, keeping the reference fixed.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for correct new words, speaker resemblance, and natural pacing; more CFG is not a voice-similarity slider.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for correct new words, speaker resemblance, and natural pacing; more CFG is not a voice-similarity slider.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Automatic estimates length from the NEW target text. Manual uses target seconds. Reference length is not the requested output length.",
+      "generation_seconds": "Automatic estimates length from the NEW target text. Manual uses target seconds. Reference length is not the requested output length."
+    }
   },
   "Speech text editing": {
     "key": "content_edit",
@@ -27,7 +45,16 @@
     "secondary_help": "Optional full transcript of the CROPPED SOURCE audio, before the edit. Used only to estimate output duration; it is not a prompt or transcript correction.",
     "requirement": "Connect ordinary spoken audio. Make one replacement, insertion, or deletion, using the exact original words.",
     "example": "Replace 'this afternoon' with 'tomorrow morning'.",
-    "note": "Prefer Base. Crop to the sentence around the edit with a little context. Match the original words exactly; use a longer unique phrase if they repeat. Set seed control to fixed for comparisons. Start with NFE 32, CFG 2, Sway -1; try a few seeds first, then compare NFE 48/64 or modest CFG changes one at a time. Extra instructions in box 2 are ignored. Check Final instruction and Run metadata."
+    "note": "Prefer Base. Crop to the sentence around the edit with a little context. Match the original words exactly; use a longer unique phrase if they repeat. Set seed control to fixed for comparisons. Start with NFE 32, CFG 2, Sway -1; try a few seeds first, then compare NFE 48/64 or modest CFG changes one at a time. Extra instructions in box 2 are ignored. Check Final instruction and Run metadata.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare complete replacement, unchanged words, and voice continuity. Partial edits such as Florida Angeles may vary by seed.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for complete replacement, retained words, timing, and artifacts. Stronger CFG does not guarantee that the whole phrase is replaced; try a longer phrase with context first.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for complete replacement, retained words, timing, and artifacts. Stronger CFG does not guarantee that the whole phrase is replaced; try a longer phrase with context first.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Always automatic from source speech and the edit. Box 2 accepts the full original CROPPED transcript for the length estimate only. Manual target seconds and connected Float are ignored. Check resolved duration.",
+      "generation_seconds": "Always automatic from source speech and the edit. Box 2 accepts the full original CROPPED transcript for the length estimate only. Manual target seconds and connected Float are ignored. Check resolved duration."
+    }
   },
   "Lyric editing": {
     "key": "lyric_edit",
@@ -37,7 +64,16 @@
     "secondary_help": "Optional full lyrics of the CROPPED SOURCE vocals, before the edit. Duration estimation only; not extra editing directions.",
     "requirement": "Connect clean, isolated solo singing without accompaniment (a cappella). Replace one phrase matching the actual lyrics.",
     "example": "Change 'hello tomorrow' to 'hello future' in the vocal recording.",
-    "note": "Use isolated, unaccompanied solo vocals and a short phrase with context. Do not use ordinary speech or a mix with accompaniment. Try Base and a fixed seed while comparing settings. Box 2 cannot steer pronunciation."
+    "note": "Use isolated, unaccompanied solo vocals and a short phrase with context. Do not use ordinary speech or a mix with accompaniment. Try Base and a fixed seed while comparing settings. Box 2 cannot steer pronunciation.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare sung pronunciation, replacement completeness, melody, and voice continuity.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for the requested lyrics without melody or voice damage; sampling changes cannot remove accompaniment from an unsuitable source.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for the requested lyrics without melody or voice damage; sampling changes cannot remove accompaniment from an unsuitable source.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Always automatic from source and lyric length changes. Box 2 is the original cropped lyrics for duration only; manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Always automatic from source and lyric length changes. Box 2 is the original cropped lyrics for duration only; manual target seconds and connected Float are ignored."
+    }
   },
   "Pitch editing": {
     "key": "pitch",
@@ -47,7 +83,16 @@
     "secondary_help": "Unused. Leave blank; additional prose here does not affect pitch.",
     "requirement": "Connect audio. Supported changes are +/-1, +/-2, or +/-3 semitones.",
     "example": "+1 (one semitone higher) or -2 (two semitones lower)",
-    "note": "Duration follows the effective source speech. Use one supported step; zero is rejected. Preserve the same source and seed when comparing pitch choices."
+    "note": "Duration follows the effective source speech. Use one supported step; zero is rejected. Preserve the same source and seed when comparing pitch choices.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare pitch change while listening for unchanged words and voice artifacts.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. The signed semitone value in box 1 sets the request; NFE/CFG are not pitch-amount controls.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. The signed semitone value in box 1 sets the request; NFE/CFG are not pitch-amount controls.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Matches effective source speech duration. Manual target seconds and connected Float are ignored."
+    }
   },
   "Speed editing": {
     "key": "speed",
@@ -57,7 +102,16 @@
     "secondary_help": "Unused. Leave blank; additional prose here does not affect speed.",
     "requirement": "Connect audio. Supported multipliers: 0.5, 0.75, 1.25, 1.5, 2.0.",
     "example": "0.75 (slower) or 1.25 (faster)",
-    "note": "Below 1 slows speech; above 1 speeds it up. Duration is speech duration divided by the multiplier. Manual duration is ignored; trim the source if slowing it would exceed 30 seconds."
+    "note": "Below 1 slows speech; above 1 speeds it up. Duration is speech duration divided by the multiplier. Manual duration is ignored; trim the source if slowing it would exceed 30 seconds.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare intelligibility, rhythm, and voice continuity at the same multiplier.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. The multiplier in box 1 requests speed; NFE/CFG do not set speaking rate. Listen for intelligibility and artifacts.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. The multiplier in box 1 requests speed; NFE/CFG do not set speaking rate. Listen for intelligibility and artifacts.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Effective speech duration divided by the multiplier. Below 1 lengthens output; above 1 shortens it. Manual target seconds and connected Float are ignored; crop first if output would exceed 30 seconds.",
+      "generation_seconds": "Effective speech duration divided by the multiplier. Below 1 lengthens output; above 1 shortens it. Manual target seconds and connected Float are ignored; crop first if output would exceed 30 seconds."
+    }
   },
   "Volume editing": {
     "key": "volume",
@@ -67,7 +121,16 @@
     "secondary_help": "Unused. Leave blank; additional prose here does not affect volume.",
     "requirement": "Connect audio. Supported changes are +/-5, +/-10, or +/-15 dB.",
     "example": "+5 (louder) or -10 (quieter)",
-    "note": "Positive values increase volume; negative values reduce it. Output protection may reduce peaks to prevent clipping, so requested amplification is not an unlimited gain control."
+    "note": "Positive values increase volume; negative values reduce it. Output protection may reduce peaks to prevent clipping, so requested amplification is not an unlimited gain control.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare loudness, clarity, and clipping artifacts at the same dB request.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. The dB value in box 1 sets the volume request; CFG is not a gain knob. Peak protection can reduce the final boost.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. The dB value in box 1 sets the volume request; CFG is not a gain knob. Peak protection can reduce the final boost.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Matches effective source speech duration. Manual target seconds and connected Float are ignored."
+    }
   },
   "Emotion editing": {
     "key": "emotion",
@@ -77,7 +140,16 @@
     "secondary_help": "Unused. Leave blank; additional emotional directions here are ignored.",
     "requirement": "Connect spoken audio. Choose happy, angry, sad, fearful, surprised, disgusted, calm, or excited.",
     "example": "sad or fearful",
-    "note": "Use spoken speech, not singing. Match request language to source speech where possible. Base is the recommended starting point. Emotion changes use automatic duration factors; manual duration does not override them."
+    "note": "Use spoken speech, not singing. Match request language to source speech where possible. Base is the recommended starting point. Emotion changes use automatic duration factors; manual duration does not override them.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare emotion, pronunciation, and speaker identity; seeds may produce different deliveries.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for the target emotion without losing the words or voice. CFG is not a calibrated emotion-intensity control.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for the target emotion without losing the words or voice. CFG is not a calibrated emotion-intensity control.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Automatic speech-duration factors: sad 1.22x, fearful 1.16x, other supported emotions 1.06x. Manual target seconds and connected Float are ignored; trim if resolved output exceeds 30 seconds.",
+      "generation_seconds": "Automatic speech-duration factors: sad 1.22x, fearful 1.16x, other supported emotions 1.06x. Manual target seconds and connected Float are ignored; trim if resolved output exceeds 30 seconds."
+    }
   },
   "Timbre editing": {
     "key": "timbre",
@@ -87,7 +159,16 @@
     "secondary_help": "Unused. Leave blank; put the voice description in box 1.",
     "requirement": "Connect spoken audio and describe the desired voice.",
     "example": "A deep, resonant young male voice",
-    "note": "Keeps the words while changing voice character. To speak new text, use TTS or Voice cloning instead. Try Base and several seeds; this is voice transformation, not an exact cloning control."
+    "note": "Keeps the words while changing voice character. To speak new text, use TTS or Voice cloning instead. Try Base and several seeds; this is voice transformation, not an exact cloning control.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare voice character and intelligibility using the same description.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for the requested voice character while retaining the words. CFG is not an exact timbre-matching control.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for the requested voice character while retaining the words. CFG is not an exact timbre-matching control.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Matches effective source speech duration. Manual target seconds and connected Float are ignored."
+    }
   },
   "Accent removal": {
     "key": "deaccent",
@@ -97,7 +178,16 @@
     "secondary_help": "Unused. Leave blank; neither box selects a target accent or language.",
     "requirement": "Connect spoken audio with a regional or dialect accent.",
     "example": "Remove the regional accent",
-    "note": "Use speech with a regional/dialect accent. The task preserves speaker identity and content; custom accent instructions are not forwarded. Already-standard speech is not a useful comparison."
+    "note": "Use speech with a regional/dialect accent. The task preserves speaker identity and content; custom accent instructions are not forwarded. Already-standard speech is not a useful comparison.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare accent change, retained words, and speaker identity on genuinely accented speech.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. The task uses a fixed accent-removal action. Sampling cannot select an arbitrary target accent or language.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. The task uses a fixed accent-removal action. Sampling cannot select an arbitrary target accent or language.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Matches effective source speech duration. Manual target seconds and connected Float are ignored."
+    }
   },
   "Nonverbal sound editing": {
     "key": "nonverbal",
@@ -107,7 +197,16 @@
     "secondary_help": "Unused. Leave blank; the complete event request belongs in box 1.",
     "requirement": "Connect audio. Add or remove one event, such as laughter, breathing, a sigh, or a cough.",
     "example": "Add laughter after 'welcome back'.",
-    "note": "Use a quoted, exact spoken anchor for before/after placement. Unsupported events or missing positions are rejected. Duration changes automatically by event family; try seeds to compare event delivery."
+    "note": "Use a quoted, exact spoken anchor for before/after placement. Unsupported events or missing positions are rejected. Duration changes automatically by event family; try seeds to compare event delivery.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare event placement, event sound, and preservation of nearby speech.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. The event and quoted anchor in box 1 select the requested action; NFE/CFG do not set exact event timing or length.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. The event and quoted anchor in box 1 select the requested action; NFE/CFG do not set exact event timing or length.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Automatic source speech duration plus/minus an event-family allowance. Manual target seconds and connected Float are ignored; trim if the output would exceed 30 seconds.",
+      "generation_seconds": "Automatic source speech duration plus/minus an event-family allowance. Manual target seconds and connected Float are ignored; trim if the output would exceed 30 seconds."
+    }
   },
   "Whisper conversion": {
     "key": "whisper",
@@ -117,7 +216,16 @@
     "secondary_help": "Unused. Leave blank; extra delivery directions here are ignored.",
     "requirement": "Connect spoken audio. Specify whisper conversion or a return to normal speech.",
     "example": "Convert to whisper",
-    "note": "Use spoken audio, not singing. Whisper-to-normal preprocessing differs from normal-to-whisper. Base is the starting point; quiet whisper output is intentional."
+    "note": "Use spoken audio, not singing. Whisper-to-normal preprocessing differs from normal-to-whisper. Base is the starting point; quiet whisper output is intentional.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare word clarity and whisper/normal delivery; do not judge whisper quality by loudness alone.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for correct conversion without missing words. CFG is not a volume control; quiet whisper output is intentional.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for correct conversion without missing words. CFG is not a volume control; quiet whisper output is intentional.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Matches effective source speech duration. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Matches effective source speech duration. Manual target seconds and connected Float are ignored."
+    }
   },
   "Speech enhancement": {
     "key": "enhance",
@@ -127,7 +235,16 @@
     "secondary_help": "Unused. Leave blank; cleanup choices belong in box 1.",
     "requirement": "Connect spoken audio to remove background noise and/or room reverberation.",
     "example": "Remove noise and room reverb",
-    "note": "Keeps all speakers and the source length. To isolate a speaker, use a separation task. Try a single cleanup type before requesting both; more CFG is not guaranteed to improve cleanup."
+    "note": "Keeps all speakers and the source length. To isolate a speaker, use a separation task. Try a single cleanup type before requesting both; more CFG is not guaranteed to improve cleanup.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare residual noise/reverb, missing speech, and voice coloration.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Judge cleanup against speech preservation. Higher CFG or NFE does not guarantee more denoising; compare one cleanup type first.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Judge cleanup against speech preservation. Higher CFG or NFE does not guarantee more denoising; compare one cleanup type first.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored."
+    }
   },
   "Audio quality repair": {
     "key": "quality",
@@ -137,7 +254,16 @@
     "secondary_help": "Unused. Leave blank; put the repair request in box 1.",
     "requirement": "Connect spoken audio to restore high frequencies/bandwidth or repair telephone, megaphone, or underwater coloration.",
     "example": "Restore high frequencies and clarity; or: Remove the telephone effect",
-    "note": "Use Speech enhancement for ordinary noise/reverb. Cleanup can be included in the primary request, e.g. Restore high frequencies and denoise. Repair regenerates audio and cannot guarantee recovery of missing detail."
+    "note": "Use Speech enhancement for ordinary noise/reverb. Cleanup can be included in the primary request, e.g. Restore high frequencies and denoise. Repair regenerates audio and cannot guarantee recovery of missing detail.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare clarity, repaired defects, and newly introduced artifacts against the source.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Judge repair without invented or lost speech detail. More steps cannot guarantee recovery of information missing from the source.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Judge repair without invented or lost speech detail. More steps cannot guarantee recovery of information missing from the source.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored."
+    }
   },
   "Speaker separation": {
     "key": "speech_separate",
@@ -147,7 +273,16 @@
     "secondary_help": "Optional supported cleanup keywords: denoise, dereverb, or both. Arbitrary style instructions are ignored.",
     "requirement": "Connect audio with multiple speakers. Select a speaker by the order in which they start speaking.",
     "example": "The first speaker",
-    "note": "Use a clip containing the speaker's first appearance. Speaker order refers to the cropped clip, not the full recording. Output keeps the selected speaker and source length."
+    "note": "Use a clip containing the speaker's first appearance. Speaker order refers to the cropped clip, not the full recording. Output keeps the selected speaker and source length.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare unwanted-speaker leakage and completeness of the selected speaker.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for separation without deleting desired speech. Speaker order selects the target; CFG is not a speaker selector.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for separation without deleting desired speech. Speaker order selects the target; CFG is not a speaker selector.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Preserves full cropped input length, including silence. Speaker order is relative to this crop. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Preserves full cropped input length, including silence. Speaker order is relative to this crop. Manual target seconds and connected Float are ignored."
+    }
   },
   "Music vocal extraction": {
     "key": "music_separate",
@@ -157,7 +292,16 @@
     "secondary_help": "Unused. Leave blank; vocal selection belongs in box 1.",
     "requirement": "Connect mixed audio with accompaniment and specify the vocals to retain.",
     "example": "Keep only singing vocals",
-    "note": "Use mixed audio with accompaniment. This task selects vocal categories; it does not select a named singer or generate a different melody. Source length is preserved."
+    "note": "Use mixed audio with accompaniment. This task selects vocal categories; it does not select a named singer or generate a different melody. Source length is preserved.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare accompaniment leakage, vocal completeness, and vocal distortion.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. Listen for vocal preservation versus accompaniment removal. CFG is not a calibrated separation-strength control or named-singer selector.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. Listen for vocal preservation versus accompaniment removal. CFG is not a calibrated separation-strength control or named-singer selector.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored."
+    }
   },
   "Target speaker extraction": {
     "key": "target_speaker",
@@ -167,6 +311,15 @@
     "secondary_help": "Optional supported cleanup keywords: denoise, dereverb, or both. Arbitrary style instructions are ignored.",
     "requirement": "Connect audio with multiple speakers. Enter a short, exact phrase spoken by the target speaker.",
     "example": "Welcome to today's program",
-    "note": "The phrase identifies a speaker; it is not new text to generate. Use words unique to the target within the cropped clip. Output keeps that speaker and preserves source length."
+    "note": "The phrase identifies a speaker; it is not new text to generate. Use words unique to the target within the cropped clip. Output keeps that speaker and preserves source length.",
+    "model_help": "Base uses these sampling controls. Flash forces 4 steps and CFG 0 and uses a fixed time grid; the displayed NFE/CFG/sway values do not tune Flash. Seed still affects both variants. Task advice below describes listening checks, not benchmarked optimal settings.",
+    "control_help": {
+      "seed": "Seed selects the starting noise and can change the result. Try several seeds, then set control after generate to fixed before comparing settings. A larger seed is not better. Same seed alone does not guarantee identical audio across settings, model variants, or environments. Compare target-speaker completeness and other-speaker leakage using the same identifying phrase.",
+      "nfe_steps": "Base: sampling steps, not repeated edit attempts. Start at 32; compare 48/64 if needed. More steps cost time and do not guarantee improvement. Flash always uses 4. The exact source phrase identifies the speaker. Sampling changes cannot correct a phrase identifying the wrong speaker.",
+      "cfg_strength": "Base: extra guidance toward instruction and reference-audio conditioning. Start at 2; compare 1.5/2.5 with a fixed seed. Higher is not necessarily more accurate and can sound unnatural. CFG 0 still uses the instruction/reference; it disables the extra boost. Flash always uses 0. The exact source phrase identifies the speaker. Sampling changes cannot correct a phrase identifying the wrong speaker.",
+      "sway_sampling_coef": "Base: distributes steps along the noise-to-audio process, not locations in the recording. 0 is evenly spaced; negative values concentrate steps earlier in sampling. Leave at -1 initially. Flash ignores this widget and uses its fixed time grid.",
+      "duration_mode": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored.",
+      "generation_seconds": "Preserves full cropped input length, including silence. Manual target seconds and connected Float are ignored."
+    }
   }
 }

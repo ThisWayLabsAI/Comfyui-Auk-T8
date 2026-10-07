@@ -36,6 +36,7 @@ from .runtime import (
 )
 from .preprocess import limit_vocal_output, prepare_model_audio, protect_audio_output
 from .task_templates import (
+    CONTROL_HELP,
     TASK_GUIDES as TASK_GUIDES,
     TASK_BY_LABEL,
     TASKS,
@@ -337,14 +338,15 @@ class AuKGenerateEdit(io.ComfyNode):
                     min=0,
                     max=0x7FFFFFFFFFFFFFFF,
                     control_after_generate=io.ControlAfterGenerate.randomize,
+                    tooltip=CONTROL_HELP["seed"],
                 ),
                 io.Audio.Input("input_audio", display_name="Input / reference audio", optional=True),
                 io.Int.Input("nfe_steps", display_name="NFE steps", default=32, min=4, max=64, advanced=True,
-                             tooltip="Base: sampling steps (default 32); more steps take longer and do not guarantee a better edit. Flash always uses 4."),
+                             tooltip=CONTROL_HELP["nfe_steps"]),
                 io.Float.Input(
                     "cfg_strength",
                     display_name="CFG strength",
-                    tooltip="Base: guidance strength (default 2). Compare small changes with a fixed seed; stronger guidance is not always better. Flash always uses 0.",
+                    tooltip=CONTROL_HELP["cfg_strength"],
                     default=2.0,
                     min=0.0,
                     max=5.0,
@@ -354,7 +356,7 @@ class AuKGenerateEdit(io.ComfyNode):
                 io.Float.Input(
                     "sway_sampling_coef",
                     display_name="Sway coefficient",
-                    tooltip="Base: sampling schedule coefficient (default -1). Leave at -1 while tuning text, seed, steps, or CFG. Flash always uses -1.",
+                    tooltip=CONTROL_HELP["sway_sampling_coef"],
                     default=-1.0,
                     min=-1.0,
                     max=1.0,

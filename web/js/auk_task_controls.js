@@ -4,8 +4,8 @@ let guides = {};
 let aliases = {};
 const guideUrl = new URL("../task_guides.json", import.meta.url);
 const aliasesUrl = new URL("../legacy_widget_values.json", import.meta.url);
-guideUrl.searchParams.set("v", "english-2");
-aliasesUrl.searchParams.set("v", "english-2");
+guideUrl.searchParams.set("v", "english-3");
+aliasesUrl.searchParams.set("v", "english-3");
 Promise.all([guideUrl, aliasesUrl].map(async (url) => {
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -41,7 +41,26 @@ function renderGuide(container, label) {
     note.textContent = `Tips: ${guide.note}`;
     note.style.marginTop = "6px";
     note.style.opacity = "0.78";
-    container.append(title, requirement, primary, secondary, example, note);
+    container.append(title, requirement, primary, secondary, example);
+    const controls = document.createElement("details");
+    controls.style.marginTop = "8px";
+    const summary = document.createElement("summary");
+    summary.textContent = "Seed, sampling & duration — expand for this task";
+    summary.style.cursor = "pointer";
+    const model = document.createElement("div");
+    model.textContent = guide.model_help;
+    model.style.marginTop = "6px";
+    controls.append(summary, model);
+    for (const [name, label] of [
+        ["seed", "Seed"], ["nfe_steps", "NFE steps"], ["cfg_strength", "CFG strength"],
+        ["sway_sampling_coef", "Sway coefficient"], ["duration_mode", "Duration adaptation"],
+    ]) {
+        const row = document.createElement("div");
+        row.textContent = `${label}: ${guide.control_help[name]}`;
+        row.style.marginTop = "6px";
+        controls.append(row);
+    }
+    container.append(controls, note);
 }
 
 app.registerExtension({
@@ -93,6 +112,10 @@ app.registerExtension({
                 }
                 const guide = guides[taskWidget.value];
                 if (guide) {
+                    for (const [name, help] of Object.entries(guide.control_help)) {
+                        const widget = this.widgets?.find((entry) => entry.name === name);
+                        if (widget) widget.options = { ...(widget.options || {}), tooltip: help };
+                    }
                     for (const [name, number] of [["primary", 1], ["secondary", 2]]) {
                         const widget = this.widgets?.find((entry) => entry.name === name);
                         if (!widget) continue;

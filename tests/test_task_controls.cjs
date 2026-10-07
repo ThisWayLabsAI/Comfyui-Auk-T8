@@ -47,6 +47,10 @@ async function setup(loadImmediately) {
                 { name: "generation_seconds", value: 99 },
                 { name: "primary", value: "Keep my primary text", inputEl: element() },
                 { name: "secondary", value: "Keep my secondary text", inputEl: element() },
+                { name: "seed", value: 42 },
+                { name: "nfe_steps", value: 32 },
+                { name: "cfg_strength", value: 2 },
+                { name: "sway_sampling_coef", value: -1 },
             ];
         }
         addDOMWidget(name, type, container) { this.container = container; return {}; }
@@ -86,12 +90,25 @@ for (const immediate of [true, false]) {
                 assert.equal(node.container.children[number + 2].textContent,
                     `${number}. ${guide[`${name}_label`]}: ${guide[`${name}_help`]}`);
             }
+            for (const [name, help] of Object.entries(guides[english].control_help)) {
+                assert.equal(node.widgets.find((entry) => entry.name === name).options.tooltip, help);
+            }
+            const controls = node.container.children[6];
+            assert.equal(controls.children[0].textContent, "Seed, sampling & duration — expand for this task");
+            assert.equal(controls.children[1].textContent, guides[english].model_help);
+            assert.equal(controls.children.length, 7);
+            assert.equal(controls.children[2].textContent, `Seed: ${guides[english].control_help.seed}`);
+            assert.equal(controls.children[6].textContent, `Duration adaptation: ${guides[english].control_help.duration_mode}`);
+            assert.deepEqual(node.widgets.slice(5).map((widget) => widget.value), [42, 32, 2, -1]);
         }
         // Direct task selection refreshes guidance without changing user text.
         node.widgets[0].value = "Speech text editing";
         node.widgets[0].callback(node.widgets[0].value);
         assert.equal(node.widgets[3].label, `1. ${guides["Speech text editing"].primary_label}`);
         assert.equal(node.widgets[4].value, "Keep my secondary text");
+        assert.equal(node.widgets[1].value, "Manual duration");
+        assert.equal(node.widgets[2].value, 99);
+        assert.match(node.widgets[1].options.tooltip, /Always automatic/);
         node.container.children[0].onclick({ stopPropagation() {} });
         assert.equal(node.widgets[1].value, "Automatic adaptation (task rules)");
         assert.equal(node.widgets[2].value, 3);
